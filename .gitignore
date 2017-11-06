@@ -55,6 +55,8 @@ regression/**/*.smt2
 # regression/coverage file
 /regression/coverage_**
 
+regression/cbmc-paths/tmp
+
 # files stored by editors
 *~
 
