@@ -45,4 +45,49 @@ protected:
   const namespacet &ns;
 };
 
+/// \brief The best of two results
+inline safety_checkert::resultt operator||(
+    safety_checkert::resultt const &r1,
+    safety_checkert::resultt const &r2)
+{
+  return r1==safety_checkert::resultt::SAFE?safety_checkert::resultt::SAFE:
+         r2==safety_checkert::resultt::SAFE?safety_checkert::resultt::SAFE:
+         r1==safety_checkert::resultt::UNSAFE?safety_checkert::resultt::UNSAFE:
+         r2==safety_checkert::resultt::UNSAFE?safety_checkert::resultt::UNSAFE:
+         r1==safety_checkert::resultt::ERROR?safety_checkert::resultt::ERROR:
+         r2==safety_checkert::resultt::ERROR?safety_checkert::resultt::ERROR:
+         throw("Unknown enum value");
+}
+
+/// \brief The worst of two results
+inline safety_checkert::resultt operator&&(
+    safety_checkert::resultt const &r1,
+    safety_checkert::resultt const &r2)
+{
+  return r1==safety_checkert::resultt::ERROR?safety_checkert::resultt::ERROR:
+         r2==safety_checkert::resultt::ERROR?safety_checkert::resultt::ERROR:
+         r1==safety_checkert::resultt::UNSAFE?safety_checkert::resultt::UNSAFE:
+         r2==safety_checkert::resultt::UNSAFE?safety_checkert::resultt::UNSAFE:
+         r1==safety_checkert::resultt::SAFE?safety_checkert::resultt::SAFE:
+         r2==safety_checkert::resultt::SAFE?safety_checkert::resultt::SAFE:
+         throw("Unknown enum value");
+}
+
+/// \brief The worst of two results
+inline safety_checkert::resultt &operator&=(
+    safety_checkert::resultt &a,
+    safety_checkert::resultt const &b)
+{
+  a=a&&b;
+  return a;
+}
+
+/// \brief The best of two results
+inline safety_checkert::resultt &operator|=(
+    safety_checkert::resultt &a,
+    safety_checkert::resultt const &b)
+{
+  a=a||b;
+  return a;
+}
 #endif // CPROVER_GOTO_PROGRAMS_SAFETY_CHECKER_H
