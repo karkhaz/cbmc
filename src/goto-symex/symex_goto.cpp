@@ -10,6 +10,7 @@ Author: Daniel Kroening, kroening@kroening.com
 /// Symbolic Execution
 
 #include "goto_symex.h"
+#include "path_queue.h"
 
 #include <iostream>
 #include <cassert>
@@ -178,7 +179,7 @@ void goto_symext::symex_goto(statet &state)
     branch_point.state.saved_target=new_state_pc;
     branch_point.state.has_saved_target=true;
     branch_point.state.saved_target_is_backwards=forward;
-    branch_worklist.push_back(branch_point);
+    path_queue.put(branch_point);
   }
 
   // put into state-queue

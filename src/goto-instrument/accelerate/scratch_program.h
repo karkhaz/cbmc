@@ -39,8 +39,8 @@ public:
     symbol_table(_symbol_table),
     ns(symbol_table),
     equation(),
-    branch_worklist(),
-    symex(symbol_table, equation, branch_worklist),
+    path_queue(),
+    symex(symbol_table, equation, path_queue),
     satcheck(util_make_unique<satcheckt>()),
     satchecker(ns, *satcheck),
     z3(ns, "accelerate", "", "", smt2_dect::solvert::Z3),
@@ -76,7 +76,7 @@ protected:
   symbol_tablet new_symbol_table;
   namespacet ns;
   symex_target_equationt equation;
-  goto_symext::branch_worklistt branch_worklist;
+  path_fifot path_queue;
   goto_symext symex;
 
   std::unique_ptr<propt> satcheck;

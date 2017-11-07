@@ -39,6 +39,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <goto-symex/memory_model_sc.h>
 #include <goto-symex/memory_model_tso.h>
 #include <goto-symex/memory_model_pso.h>
+#include <goto-symex/path_queue.h>
 
 #include "cbmc_solvers.h"
 #include "counterexample_beautification.h"
@@ -587,35 +588,37 @@ int bmct::do_language_agnostic_bmc(
 {
   message_handlert &mh=message->get_message_handler();
   safety_checkert::resultt result;
-  goto_symext::branch_worklistt worklist;
+  path_queuet *worklist=path_queuet::make_queue(
+      opts.get_option("path-queue"));
   try
   {
     {
       std::unique_ptr<cbmc_solverst::solvert> cbmc_solver;
       cbmc_solver=solvers.get_solver();
       prop_convt &pc=cbmc_solver->prop_conv();
-      bmct bmc(opts, goto_model.symbol_table, mh, pc, worklist);
+      bmct bmc(opts, goto_model.symbol_table, mh, pc, *worklist);
       bmc.set_ui(ui);
       result=bmc.run(goto_model.goto_functions);
     }
-    INVARIANT(opts.get_bool_option("paths")||worklist.empty(),
+    INVARIANT(opts.get_bool_option("paths")||worklist->empty(),
         "Some branches were unexplored when model-checking "
         "the entire program.");
 
-    while(!worklist.empty())
+    while(!worklist->empty())
     {
+      message->status() << "WORKLIST:\n";
       message->status() << "___________________________\n"
-        << "Starting new path (" << worklist.size() << " to go)\n"
+        << "Starting new path (" << worklist->size() << " to go)\n"
         << message->eom;
       std::unique_ptr<cbmc_solverst::solvert> cbmc_solver;
       cbmc_solver=solvers.get_solver();
       prop_convt &pc=cbmc_solver->prop_conv();
-      goto_symext::branch_pointt &resume=worklist.front();
+      branch_pointt &resume=worklist->get();
       path_explorert pe(opts,
           goto_model.symbol_table, mh, pc, resume.equation,
-          resume.state, worklist);
+          resume.state, *worklist);
       result&=pe.run(goto_model.goto_functions);
-      worklist.pop_front();
+      worklist->rm_front();
     }
   }
   catch(const char *error_msg)
@@ -623,6 +626,8 @@ int bmct::do_language_agnostic_bmc(
     message->error() << error_msg << message->eom;
     return CPROVER_EXIT_EXCEPTION;
   }
+
+  delete worklist;
 
   message->debug() << "Memory consumption:" << messaget::endl;
   memory_info(message->debug());
@@ -646,7 +651,7 @@ void bmct::perform_symbolic_execution(
     const goto_functionst &goto_functions)
 {
   symex.symex_from_entry_point_of(goto_functions, new_symbol_table);
-  INVARIANT(options.get_bool_option("paths")||branch_worklist.empty(),
+  INVARIANT(options.get_bool_option("paths")||path_queue.empty(),
     "Branch points were saved even though we should have been "
     "executing the entire program and merging paths");
   ns=namespacet(outer_symbol_table, new_symbol_table);

@@ -109,6 +109,11 @@ void cbmc_parse_optionst::get_command_line_options(optionst &options)
     exit(CPROVER_EXIT_USAGE_ERROR);
   }
 
+  if(cmdline.isset("path-queue"))
+    options.set_option("path-queue", cmdline.get_values("path-queue"));
+  else
+    options.set_option("path-queue", "FIFO");
+
   if(cmdline.isset("paths"))
     options.set_option("paths", true);
 

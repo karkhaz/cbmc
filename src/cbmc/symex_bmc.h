@@ -26,7 +26,7 @@ public:
   symex_bmct(
     const symbol_tablet &outer_symbol_table,
     symex_target_equationt &_target,
-    goto_symext::branch_worklistt &branch_worklist);
+    path_queuet &path_queue);
 
   // To show progress
   source_locationt last_source_location;

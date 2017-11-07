@@ -57,7 +57,7 @@ class optionst;
   "(error-label):(verbosity):(no-library)" \
   "(nondet-static)" \
   "(version)" \
-  "(paths)" \
+  "(paths)(path-queue):" \
   "(cover):(symex-coverage-report):" \
   "(mm):" \
   "(i386-linux)(i386-macos)(i386-win32)(win32)(winx64)(gcc)" \

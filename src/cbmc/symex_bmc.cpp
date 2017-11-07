@@ -21,8 +21,8 @@ Author: Daniel Kroening, kroening@kroening.com
 symex_bmct::symex_bmct(
   const symbol_tablet &outer_symbol_table,
   symex_target_equationt &_target,
-  goto_symext::branch_worklistt &_branch_worklist):
-  goto_symext(outer_symbol_table, _target, _branch_worklist),
+  path_queuet &path_queue):
+  goto_symext(outer_symbol_table, _target, path_queue),
   record_coverage(false),
   max_unwind(0),
   max_unwind_is_set(false),

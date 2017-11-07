@@ -27,6 +27,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <solvers/smt2/smt2_dec.h>
 
 #include <goto-symex/symex_target_equation.h>
+#include <goto-symex/path_queue.h>
 #include <goto-programs/safety_checker.h>
 
 #include "symex_bmc.h"
@@ -48,31 +49,31 @@ public:
 ///   constructor is `false` (unset), an instance of this class will
 ///   symbolically execute the entire program, performing path merging
 ///   to build a formula corresponding to all executions of the program
-///   up to the unwinding limit. In this case, the `branch_worklist`
+///   up to the unwinding limit. In this case, the `path_queue`
 ///   member shall not be touched; this is enforced by the assertion in
 ///   this class' implementation of bmct::perform_symbolic_execution().
 ///
 /// - If the `--paths` flag is `true`, this `bmct` object will explore a
 ///   single path through the codebase without doing any path merging.
 ///   If some paths were not taken, the state at those branch points
-///   will be appended to `branch_worklist`. After the single path that
+///   will be appended to `path_queue`. After the single path that
 ///   this `bmct` object executed has been model-checked, you can resume
 ///   exploring further paths by popping an element from
-///   `branch_worklist` and using it to construct a path_explorert
+///   `path_queue` and using it to construct a path_explorert
 ///   object.
   bmct(
     const optionst &_options,
     const symbol_tablet &outer_symbol_table,
     message_handlert &_message_handler,
     prop_convt &_prop_conv,
-    goto_symext::branch_worklistt &_branch_worklist):
+    path_queuet &path_queue):
     safety_checkert(ns, _message_handler),
     options(_options),
     outer_symbol_table(outer_symbol_table),
     ns(outer_symbol_table),
     equation(),
-    branch_worklist(_branch_worklist),
-    symex(outer_symbol_table, equation, branch_worklist),
+    path_queue(path_queue),
+    symex(outer_symbol_table, equation, path_queue),
     prop_conv(_prop_conv),
     ui(ui_message_handlert::uit::PLAIN)
   {
@@ -87,7 +88,7 @@ protected:
 ///
 /// This constructor exists as a delegate for the path_explorert class.
 /// It differs from \ref bmct's public constructor in that it actually
-/// does something with the branch_worklistt argument, and also takes a
+/// does something with the path_queuet argument, and also takes a
 /// symex_target_equationt. See the documentation for path_explorert for
 /// details.
   bmct(
@@ -96,14 +97,14 @@ protected:
     message_handlert &_message_handler,
     prop_convt &_prop_conv,
     symex_target_equationt &_equation,
-    goto_symext::branch_worklistt &_branch_worklist):
+    path_queuet &path_queue):
     safety_checkert(ns, _message_handler),
     options(_options),
     outer_symbol_table(outer_symbol_table),
     ns(outer_symbol_table),
     equation(_equation),
-    branch_worklist(_branch_worklist),
-    symex(outer_symbol_table, equation, branch_worklist),
+    path_queue(path_queue),
+    symex(outer_symbol_table, equation, path_queue),
     prop_conv(_prop_conv),
     ui(ui_message_handlert::uit::PLAIN)
   {
@@ -147,7 +148,7 @@ protected:
   symbol_tablet new_symbol_table;
   namespacet ns;
   symex_target_equationt equation;
-  goto_symext::branch_worklistt &branch_worklist;
+  path_queuet &path_queue;
   symex_bmct symex;
   prop_convt &prop_conv;
 
@@ -226,11 +227,11 @@ public:
     prop_convt &_prop_conv,
     symex_target_equationt &saved_equation,
     const goto_symex_statet &saved_state,
-    goto_symext::branch_worklistt &branch_worklist):
+    path_queuet &path_queue):
     bmct(_options,
         outer_symbol_table,
         _message_handler, _prop_conv,
-        saved_equation, branch_worklist),
+        saved_equation, path_queue),
     saved_state(saved_state)
   { }
 

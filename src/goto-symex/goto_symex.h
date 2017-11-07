@@ -19,6 +19,7 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include "goto_symex_state.h"
 #include "symex_target_equation.h"
+#include "path_queue.h"
 
 class typet;
 class code_typet;
@@ -43,32 +44,10 @@ class goto_symext
 public:
   typedef goto_symex_statet statet;
 
-  struct branch_pointt
-  {
-    symex_target_equationt equation;
-    statet state;
-
-    /// Note that the equation will become unusable as soon as `ns` goes
-    /// out of scope. You probably want to re-initialize `equation` with
-    /// a new namespace when you retrieve it from this branch_pointt.
-    explicit branch_pointt(
-        const symex_target_equationt &e,
-        const statet &s):
-      equation(e), state(s, &equation)
-    {}
-
-    explicit branch_pointt(const branch_pointt &other):
-      equation(other.equation),
-      state(other.state, &equation)
-    { };
-  };
-
-  typedef std::list<branch_pointt> branch_worklistt;
-
   goto_symext(
     const symbol_tablet &outer_symbol_table,
     symex_target_equationt &_target,
-    branch_worklistt &_branch_worklist):
+    path_queuet &path_queue):
     total_vccs(0),
     remaining_vccs(0),
     constant_propagation(true),
@@ -78,7 +57,7 @@ public:
     target(_target),
     atomic_section_counter(0),
     guard_identifier("goto_symex::\\guard"),
-    branch_worklist(_branch_worklist)
+    path_queue(path_queue)
   {
     options.set_option("simplify", true);
     options.set_option("assertions", true);
@@ -363,7 +342,7 @@ protected:
   void replace_nondet(exprt &expr);
   void rewrite_quantifiers(exprt &expr, statet &state);
 
-  branch_worklistt &branch_worklist;
+  path_queuet &path_queue;
 };
 
 #endif // CPROVER_GOTO_SYMEX_GOTO_SYMEX_H
