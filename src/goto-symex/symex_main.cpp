@@ -46,10 +46,12 @@ void goto_symext::symex_transition(
   state.source.pc=to;
 }
 
-void goto_symext::new_name(symbolt &symbol)
+void goto_symext::new_name(
+    symbolt &symbol,
+    statet &state)
 {
   get_new_name(symbol, ns);
-  new_symbol_table.add(symbol);
+  state.symbol_table.add(symbol);
 }
 
 void goto_symext::vcc(
@@ -124,21 +126,17 @@ void goto_symext::rewrite_quantifiers(exprt &expr, statet &state)
   }
 }
 
-/// symex from given state
-void goto_symext::operator()(
+void goto_symext::symex_from_goto_program(
+  const goto_programt &goto_program,
   statet &state,
   const goto_functionst &goto_functions,
-  const goto_programt &goto_program)
+  symbol_tablet &new_symbol_table)
 {
-  assert(!goto_program.instructions.empty());
+  ns=namespacet(outer_symbol_table, state.symbol_table);
 
-  state.source=symex_targett::sourcet(goto_program);
+  assert(!goto_program.instructions.empty());
   assert(!state.threads.empty());
   assert(!state.call_stack().empty());
-  state.top().end_of_function=--goto_program.instructions.end();
-  state.top().calling_location.pc=state.top().end_of_function;
-  state.symex_target=&target;
-  state.dirty=util_make_unique<dirtyt>(goto_functions);
 
   symex_transition(state, state.source.pc);
 
@@ -147,6 +145,7 @@ void goto_symext::operator()(
   while(!state.call_stack().empty())
   {
     symex_step(goto_functions, state);
+    state.has_saved_target=false;
 
     // is there another thread to execute?
     if(state.call_stack().empty() &&
@@ -158,21 +157,14 @@ void goto_symext::operator()(
       symex_transition(state, state.source.pc);
     }
   }
-
-  state.dirty=nullptr;
+  new_symbol_table=state.symbol_table;
 }
 
-/// symex starting from given program
-void goto_symext::operator()(
-  const goto_functionst &goto_functions,
-  const goto_programt &goto_program)
-{
-  statet state;
-  operator() (state, goto_functions, goto_program);
-}
-
-/// symex from entry point
-void goto_symext::operator()(const goto_functionst &goto_functions)
+void goto_symext::symex_from_saved_state(
+    const goto_functionst &goto_functions,
+    const statet &saved_state,
+    symex_target_equationt *const saved_equation,
+    symbol_tablet &new_symbol_table)
 {
   goto_functionst::function_mapt::const_iterator it=
     goto_functions.function_map.find(goto_functionst::entry_point());
@@ -182,7 +174,33 @@ void goto_symext::operator()(const goto_functionst &goto_functions)
 
   const goto_programt &body=it->second.body;
 
-  operator()(goto_functions, body);
+  statet state(saved_state, saved_equation);
+  // Do NOT do the same initialization that `symex_from_goto_program` does
+  // for a new state, as that would clobber the program counter etc.
+  symex_from_goto_program(body, state, goto_functions, new_symbol_table);
+}
+
+void goto_symext::symex_from_entry_point_of(
+    const goto_functionst &goto_functions,
+    symbol_tablet &new_symbol_table)
+{
+  goto_functionst::function_mapt::const_iterator it=
+    goto_functions.function_map.find(goto_functionst::entry_point());
+
+  if(it==goto_functions.function_map.end())
+    throw "the program has no entry point";
+
+  const goto_programt &body=it->second.body;
+
+  statet state;
+
+  state.source=symex_targett::sourcet(body);
+  state.top().end_of_function=--body.instructions.end();
+  state.top().calling_location.pc=state.top().end_of_function;
+  state.symex_target=&target;
+  state.dirty.build(goto_functions);
+
+  symex_from_goto_program(body, state, goto_functions, new_symbol_table);
 }
 
 /// do just one step
@@ -202,7 +220,8 @@ void goto_symext::symex_step(
 
   const goto_programt::instructiont &instruction=*state.source.pc;
 
-  merge_gotos(state);
+  if(!options.get_bool_option("paths"))
+    merge_gotos(state);
 
   // depth exceeded?
   {

@@ -15,10 +15,12 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <iostream>
 #include <memory>
 
+#include <util/exit_codes.h>
 #include <util/string2int.h>
 #include <util/source_location.h>
 #include <util/string_utils.h>
 #include <util/time_stopping.h>
+#include <util/memory_info.h>
 #include <util/message.h>
 #include <util/json.h>
 #include <util/cprover_prefix.h>
@@ -26,6 +28,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <langapi/mode.h>
 #include <langapi/language_util.h>
 
+#include <goto-programs/goto_model.h>
 #include <goto-programs/xml_goto_trace.h>
 #include <goto-programs/json_goto_trace.h>
 #include <goto-programs/graphml_witness.h>
@@ -37,6 +40,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <goto-symex/memory_model_tso.h>
 #include <goto-symex/memory_model_pso.h>
 
+#include "cbmc_solvers.h"
 #include "counterexample_beautification.h"
 #include "fault_localization.h"
 
@@ -342,8 +346,7 @@ safety_checkert::resultt bmct::run(
     // get unwinding info
     setup_unwind();
 
-    // perform symbolic execution
-    symex(goto_functions);
+    perform_symbolic_execution(goto_functions);
 
     // add a partial ordering, if required
     if(equation.has_threads())
@@ -573,4 +576,89 @@ void bmct::setup_unwind()
 
   if(options.get_option("unwind")!="")
     symex.set_unwind_limit(options.get_unsigned_int_option("unwind"));
+}
+
+int bmct::do_language_agnostic_bmc(
+    const optionst &opts,
+    const goto_modelt &goto_model,
+    const ui_message_handlert::uit &ui,
+    messaget *const message,
+    cbmc_solverst &solvers)
+{
+  message_handlert &mh=message->get_message_handler();
+  safety_checkert::resultt result;
+  goto_symext::branch_worklistt worklist;
+  try
+  {
+    {
+      std::unique_ptr<cbmc_solverst::solvert> cbmc_solver;
+      cbmc_solver=solvers.get_solver();
+      prop_convt &pc=cbmc_solver->prop_conv();
+      bmct bmc(opts, goto_model.symbol_table, mh, pc, worklist);
+      bmc.set_ui(ui);
+      result=bmc.run(goto_model.goto_functions);
+    }
+    INVARIANT(opts.get_bool_option("paths")||worklist.empty(),
+        "Some branches were unexplored when model-checking "
+        "the entire program.");
+
+    while(!worklist.empty())
+    {
+      message->status() << "___________________________\n"
+        << "Starting new path (" << worklist.size() << " to go)\n"
+        << message->eom;
+      std::unique_ptr<cbmc_solverst::solvert> cbmc_solver;
+      cbmc_solver=solvers.get_solver();
+      prop_convt &pc=cbmc_solver->prop_conv();
+      goto_symext::branch_pointt &resume=worklist.front();
+      path_explorert pe(opts,
+          goto_model.symbol_table, mh, pc, resume.equation,
+          resume.state, worklist);
+      result&=pe.run(goto_model.goto_functions);
+      worklist.pop_front();
+    }
+  }
+  catch(const char *error_msg)
+  {
+    message->error() << error_msg << message->eom;
+    return CPROVER_EXIT_EXCEPTION;
+  }
+
+  message->debug() << "Memory consumption:" << messaget::endl;
+  memory_info(message->debug());
+  message->debug() << message->eom;
+
+  switch(result)
+  {
+    case safety_checkert::resultt::SAFE:
+      return CPROVER_EXIT_VERIFICATION_SAFE;
+    case safety_checkert::resultt::UNSAFE:
+      return CPROVER_EXIT_VERIFICATION_UNSAFE;
+    case safety_checkert::resultt::ERROR:
+      return CPROVER_EXIT_INTERNAL_ERROR;
+    default:
+      INVARIANT(false, "Unknown  safety checker result");
+  }
+  UNREACHABLE;
+}
+
+void bmct::perform_symbolic_execution(
+    const goto_functionst &goto_functions)
+{
+  symex.symex_from_entry_point_of(goto_functions, new_symbol_table);
+  INVARIANT(options.get_bool_option("paths")||branch_worklist.empty(),
+    "Branch points were saved even though we should have been "
+    "executing the entire program and merging paths");
+  ns=namespacet(outer_symbol_table, new_symbol_table);
+}
+
+void path_explorert::perform_symbolic_execution(
+    const goto_functionst &goto_functions)
+{
+  symex.symex_from_saved_state(
+      goto_functions,
+      saved_state,
+      &equation,
+      new_symbol_table);
+  ns=namespacet(outer_symbol_table, new_symbol_table);
 }

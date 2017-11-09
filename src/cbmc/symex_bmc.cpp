@@ -11,20 +11,22 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include "symex_bmc.h"
 
+#include <goto-symex/symex_target_equation.h>
+
 #include <limits>
 
 #include <util/source_location.h>
 #include <util/simplify_expr.h>
 
 symex_bmct::symex_bmct(
-  const namespacet &_ns,
-  symbol_tablet &_new_symbol_table,
-  symex_targett &_target):
-  goto_symext(_ns, _new_symbol_table, _target),
+  const symbol_tablet &outer_symbol_table,
+  symex_target_equationt &_target,
+  goto_symext::branch_worklistt &_branch_worklist):
+  goto_symext(outer_symbol_table, _target, _branch_worklist),
   record_coverage(false),
   max_unwind(0),
   max_unwind_is_set(false),
-  symex_coverage(_ns)
+  symex_coverage(ns)
 {
 }
 
@@ -105,7 +107,7 @@ void symex_bmct::merge_goto(
 }
 
 bool symex_bmct::get_unwind(
-  const symex_targett::sourcet &source,
+  const symex_target_equationt::sourcet &source,
   unsigned unwind)
 {
   const irep_idt id=goto_programt::loop_id(*source.pc);

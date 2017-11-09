@@ -19,6 +19,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <analyses/goto_check.h>
 
 #include "xml_interface.h"
+#include "cbmc_solvers.h"
 
 class bmct;
 class goto_functionst;
@@ -56,6 +57,7 @@ class optionst;
   "(error-label):(verbosity):(no-library)" \
   "(nondet-static)" \
   "(version)" \
+  "(paths)" \
   "(cover):(symex-coverage-report):" \
   "(mm):" \
   "(i386-linux)(i386-macos)(i386-win32)(win32)(winx64)(gcc)" \
@@ -93,7 +95,6 @@ protected:
   int get_goto_program(const optionst &);
   bool process_goto_program(const optionst &);
   bool set_properties();
-  int do_bmc(bmct &);
 };
 
 #endif // CPROVER_CBMC_CBMC_PARSE_OPTIONS_H

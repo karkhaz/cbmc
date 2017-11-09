@@ -39,7 +39,11 @@ bool scratch_programt::check_sat(bool do_slice)
   symex.constant_propagation=constant_propagation;
   goto_symex_statet::propagationt::valuest constants;
 
-  symex(symex_state, functions, *this);
+  symex.symex_from_goto_program(*this,
+      symex_state,
+      functions,
+      new_symbol_table);
+  ns=namespacet(symbol_table, new_symbol_table);
 
   if(do_slice)
   {

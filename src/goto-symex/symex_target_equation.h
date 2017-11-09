@@ -30,8 +30,17 @@ class prop_convt;
 
 class symex_target_equationt:public symex_targett
 {
+private:
+  /// \brief Dangerous, do not use
+  ///
+  /// Copying an equation E1 to E2 runs the risk of E2 pointing to a
+  /// deallocated namespacet, if E1 (and the namespacet that its `ns`
+  /// member points to) go out of scope. If your class has a
+  /// symex_target_equationt member and needs a copy constructor, copy the
+  /// equation using the fake copy constructor of this class.
+
 public:
-  explicit symex_target_equationt(const namespacet &_ns);
+  explicit symex_target_equationt();
   virtual ~symex_target_equationt();
 
   // read event
@@ -316,7 +325,7 @@ public:
   }
 
 protected:
-  const namespacet &ns;
+  const namespacet *ns;
 
   // for enforcing sharing in the expressions stored
   merge_irept merge_irep;

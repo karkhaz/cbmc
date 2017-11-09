@@ -18,6 +18,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <goto-programs/goto_functions.h>
 
 #include "goto_symex_state.h"
+#include "symex_target_equation.h"
 
 class typet;
 class code_typet;
@@ -33,7 +34,6 @@ class symbol_exprt;
 class member_exprt;
 class namespacet;
 class side_effect_exprt;
-class symex_targett;
 class typecast_exprt;
 
 /*! \brief The main class for the forward symbolic simulator
@@ -41,19 +41,44 @@ class typecast_exprt;
 class goto_symext
 {
 public:
+  typedef goto_symex_statet statet;
+
+  struct branch_pointt
+  {
+    symex_target_equationt equation;
+    statet state;
+
+    /// Note that the equation will become unusable as soon as `ns` goes
+    /// out of scope. You probably want to re-initialize `equation` with
+    /// a new namespace when you retrieve it from this branch_pointt.
+    explicit branch_pointt(
+        const symex_target_equationt &e,
+        const statet &s):
+      equation(e), state(s, &equation)
+    {}
+
+    explicit branch_pointt(const branch_pointt &other):
+      equation(other.equation),
+      state(other.state, &equation)
+    { };
+  };
+
+  typedef std::list<branch_pointt> branch_worklistt;
+
   goto_symext(
-    const namespacet &_ns,
-    symbol_tablet &_new_symbol_table,
-    symex_targett &_target):
+    const symbol_tablet &outer_symbol_table,
+    symex_target_equationt &_target,
+    branch_worklistt &_branch_worklist):
     total_vccs(0),
     remaining_vccs(0),
     constant_propagation(true),
-    new_symbol_table(_new_symbol_table),
     language_mode(),
-    ns(_ns),
+    outer_symbol_table(outer_symbol_table),
+    ns(outer_symbol_table),
     target(_target),
     atomic_section_counter(0),
-    guard_identifier("goto_symex::\\guard")
+    guard_identifier("goto_symex::\\guard"),
+    branch_worklist(_branch_worklist)
   {
     options.set_option("simplify", true);
     options.set_option("assertions", true);
@@ -63,24 +88,22 @@ public:
   {
   }
 
-  typedef goto_symex_statet statet;
-
-  /** symex all at once, starting from entry point */
-  virtual void operator()(
-    const goto_functionst &goto_functions);
-
-  /** symex starting from given goto program */
-  virtual void operator()(
+  virtual void symex_from_saved_state(
     const goto_functionst &goto_functions,
-    const goto_programt &goto_program);
+    const statet &saved_state,
+    symex_target_equationt *const saved_equation,
+    symbol_tablet &new_symbol_table);
 
-  /** start symex in a given state */
-  virtual void operator()(
+  virtual void symex_from_entry_point_of(
+    const goto_functionst &goto_functions,
+    symbol_tablet &new_symbol_table);
+
+  virtual void symex_from_goto_program(
+    const goto_programt &goto_program,
     statet &state,
     const goto_functionst &goto_functions,
-    const goto_programt &goto_program);
+    symbol_tablet &new_symbol_table);
 
-  /** execute just one step */
   virtual void symex_step(
     const goto_functionst &goto_functions,
     statet &state);
@@ -94,20 +117,20 @@ public:
   bool constant_propagation;
 
   optionst options;
-  symbol_tablet &new_symbol_table;
 
   /// language_mode: ID_java, ID_C or another language identifier
   /// if we know the source language in use, irep_idt() otherwise.
   irep_idt language_mode;
 
 protected:
-  const namespacet &ns;
-  symex_targett &target;
+  const symbol_tablet &outer_symbol_table;
+  namespacet ns;
+  symex_target_equationt &target;
   unsigned atomic_section_counter;
 
   friend class symex_dereference_statet;
 
-  void new_name(symbolt &symbol);
+  void new_name(symbolt &symbol, statet &state);
 
   // this does the following:
   // a) rename non-det choices
@@ -121,7 +144,7 @@ protected:
   void initialize_auto_object(const exprt &expr, statet &state);
   void process_array_expr(exprt &expr);
   void process_array_expr_rec(exprt &expr, const typet &type) const;
-  exprt make_auto_object(const typet &type);
+  exprt make_auto_object(const typet &type, statet &state);
 
   virtual void dereference(
     exprt &expr,
@@ -200,7 +223,7 @@ protected:
   // determine whether to unwind a loop -- true indicates abort,
   // with false we continue.
   virtual bool get_unwind(
-    const symex_targett::sourcet &source,
+    const symex_target_equationt::sourcet &source,
     unsigned unwind);
 
   virtual void loop_bound_exceeded(statet &state, const exprt &guard);
@@ -265,7 +288,7 @@ protected:
   // havocs the given object
   void havoc_rec(statet &, const guardt &, const exprt &);
 
-  typedef symex_targett::assignment_typet assignment_typet;
+  typedef symex_target_equationt::assignment_typet assignment_typet;
 
   void symex_assign_rec(
     statet &state,
@@ -339,6 +362,8 @@ protected:
   void read(exprt &expr);
   void replace_nondet(exprt &expr);
   void rewrite_quantifiers(exprt &expr, statet &state);
+
+  branch_worklistt &branch_worklist;
 };
 
 #endif // CPROVER_GOTO_SYMEX_GOTO_SYMEX_H

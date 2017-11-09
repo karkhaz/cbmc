@@ -505,31 +505,12 @@ int jbmc_parse_optionst::doit()
     goto_model.symbol_table,
     get_message_handler());
 
-  jbmc_solvers.set_ui(ui_message_handler.get_ui());
-
-  std::unique_ptr<cbmc_solverst::solvert> jbmc_solver;
-
-  try
-  {
-    jbmc_solver=jbmc_solvers.get_solver();
-  }
-
-  catch(const char *error_msg)
-  {
-    error() << error_msg << eom;
-    return 1; // should contemplate EX_SOFTWARE from sysexits.h
-  }
-
-  prop_convt &prop_conv=jbmc_solver->prop_conv();
-
-  bmct bmc(
+  return bmct::do_language_agnostic_bmc(
     options,
-    goto_model.symbol_table,
-    get_message_handler(),
-    prop_conv);
-
-  // do actual BMC
-  return do_bmc(bmc);
+    goto_model,
+    ui_message_handler.get_ui(),
+    this,
+    jbmc_solvers);
 }
 
 bool jbmc_parse_optionst::set_properties()
@@ -787,35 +768,6 @@ bool jbmc_parse_optionst::process_goto_program(
   }
 
   return false;
-}
-
-/// invoke main modules
-int jbmc_parse_optionst::do_bmc(bmct &bmc)
-{
-  bmc.set_ui(ui_message_handler.get_ui());
-
-  int result=6;
-
-  // do actual BMC
-  switch(bmc.run(goto_model.goto_functions))
-  {
-    case safety_checkert::resultt::SAFE:
-      result=0;
-      break;
-    case safety_checkert::resultt::UNSAFE:
-      result=10;
-      break;
-    case safety_checkert::resultt::ERROR:
-      result=6;
-      break;
-  }
-
-  // let's log some more statistics
-  debug() << "Memory consumption:" << messaget::endl;
-  memory_info(debug());
-  debug() << eom;
-
-  return result;
 }
 
 /// display command line help

@@ -38,8 +38,9 @@ public:
     constant_propagation(true),
     symbol_table(_symbol_table),
     ns(symbol_table),
-    equation(ns),
-    symex(ns, symbol_table, equation),
+    equation(),
+    branch_worklist(),
+    symex(symbol_table, equation, branch_worklist),
     satcheck(util_make_unique<satcheckt>()),
     satchecker(ns, *satcheck),
     z3(ns, "accelerate", "", "", smt2_dect::solvert::Z3),
@@ -72,8 +73,10 @@ protected:
   goto_symex_statet symex_state;
   goto_functionst functions;
   symbol_tablet &symbol_table;
-  const namespacet ns;
+  symbol_tablet new_symbol_table;
+  namespacet ns;
   symex_target_equationt equation;
+  goto_symext::branch_worklistt branch_worklist;
   goto_symext symex;
 
   std::unique_ptr<propt> satcheck;

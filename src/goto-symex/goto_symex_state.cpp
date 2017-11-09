@@ -26,10 +26,16 @@ goto_symex_statet::goto_symex_statet():
   symex_target(nullptr),
   atomic_section_id(0),
   record_events(true),
-  dirty(nullptr)
+  dirty()
 {
   threads.resize(1);
   new_frame();
+}
+
+goto_symex_statet::goto_symex_statet(goto_functionst &goto_functions):
+  goto_symex_statet()
+{
+  dirty.build(goto_functions);
 }
 
 goto_symex_statet::~goto_symex_statet()=default;
@@ -529,11 +535,10 @@ bool goto_symex_statet::l2_thread_read_encoding(
     return false;
 
   // is it a shared object?
-  INVARIANT_STRUCTURED(dirty!=nullptr, nullptr_exceptiont, "dirty is null");
   const irep_idt &obj_identifier=expr.get_object_name();
   if(obj_identifier=="goto_symex::\\guard" ||
      (!ns.lookup(obj_identifier).is_shared() &&
-      !(*dirty)(obj_identifier)))
+      !(dirty)(obj_identifier)))
     return false;
 
   ssa_exprt ssa_l1=expr;
@@ -674,11 +679,10 @@ bool goto_symex_statet::l2_thread_write_encoding(
     return false;
 
   // is it a shared object?
-  INVARIANT_STRUCTURED(dirty!=nullptr, nullptr_exceptiont, "dirty is null");
   const irep_idt &obj_identifier=expr.get_object_name();
   if(obj_identifier=="goto_symex::\\guard" ||
      (!ns.lookup(obj_identifier).is_shared() &&
-      !(*dirty)(obj_identifier)))
+      !(dirty)(obj_identifier)))
     return false; // not shared
 
   // see whether we are within an atomic section

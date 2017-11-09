@@ -16,6 +16,8 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <memory>
 #include <unordered_set>
 
+#include <analyses/dirty.h>
+
 #include <util/guard.h>
 #include <util/std_expr.h>
 #include <util/ssa_expr.h>
@@ -25,22 +27,48 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <goto-programs/goto_functions.h>
 
 #include "symex_target.h"
+#include "symex_target_equation.h"
 
-class dirtyt;
 
 // central data structure: state
 class goto_symex_statet final
 {
+private:
+  /// \brief Dangerous, do not use
+  ///
+  /// Copying a state S1 to S2 runs the risk of S2 pointing to a
+  /// deallocated symex_target_equationt, if S1 (and the
+  /// symex_target_equationt that its `symex_target` member points to)
+  /// go out of scope. If your class has a goto_symex_statet member and
+  /// needs a copy constructor, copy the state using the fake copy
+  /// constructor of this class.
+  explicit goto_symex_statet(const goto_symex_statet &other)=default;
+
 public:
   goto_symex_statet();
+  goto_symex_statet(goto_functionst &goto_functions);
   ~goto_symex_statet();
 
-  // distance from entry
+  /// \brief Fake "copy constructor" that initializes the `symex_target` member
+  explicit goto_symex_statet(
+      const goto_symex_statet &other,
+      symex_target_equationt *const target):
+    goto_symex_statet(other)
+  {
+    symex_target=target;
+  }
+
+  /// contains symbols that are minted during symbolic execution, such as
+  /// dynamically created objects etc. The names in this table are needed
+  /// for error traces even after symbolic execution has finished.
+  symbol_tablet symbol_table;
+
+  /// distance from entry
   unsigned depth;
 
   guardt guard;
   symex_targett::sourcet source;
-  symex_targett *symex_target;
+  symex_target_equationt *symex_target;
 
   // we have a two-level renaming
 
@@ -227,6 +255,17 @@ public:
     }
   };
 
+  explicit goto_symex_statet(const goto_statet &s):
+    depth(s.depth),
+    guard(s.guard),
+    source(s.source),
+    propagation(s.propagation),
+    value_set(s.value_set),
+    atomic_section_id(s.atomic_section_id)
+  {
+    level2.current_names=s.level2_current_names;
+  }
+
   // gotos
   typedef std::list<goto_statet> goto_state_listt;
   typedef std::map<goto_programt::const_targett, goto_state_listt>
@@ -342,7 +381,11 @@ public:
 
   void switch_to_thread(unsigned t);
   bool record_events;
-  std::unique_ptr<const dirtyt> dirty;
+  dirtyt dirty;
+
+  goto_programt::const_targett saved_target;
+  bool has_saved_target;
+  bool saved_target_is_backwards;
 };
 
 #endif // CPROVER_GOTO_SYMEX_GOTO_SYMEX_STATE_H

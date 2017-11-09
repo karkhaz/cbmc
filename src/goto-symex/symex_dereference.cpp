@@ -250,7 +250,7 @@ void goto_symext::dereference_rec(
 
     value_set_dereferencet dereference(
       ns,
-      new_symbol_table,
+      state.symbol_table,
       options,
       symex_dereference_state,
       language_mode);

@@ -146,7 +146,7 @@ void goto_symext::symex_allocate(
       size_symbol.type=tmp_size.type();
       size_symbol.mode=ID_C;
 
-      new_symbol_table.add(size_symbol);
+      state.symbol_table.add(size_symbol);
 
       code_assignt assignment(size_symbol.symbol_expr(), size);
       size=assignment.lhs();
@@ -165,7 +165,7 @@ void goto_symext::symex_allocate(
   value_symbol.type.set("#dynamic", true);
   value_symbol.mode=ID_C;
 
-  new_symbol_table.add(value_symbol);
+  state.symbol_table.add(value_symbol);
 
   exprt zero_init=code.op1();
   state.rename(zero_init, ns); // to allow constant propagation
@@ -440,7 +440,7 @@ void goto_symext::symex_cpp_new(
 
   symbol.type.set("#dynamic", true);
 
-  new_symbol_table.add(symbol);
+  state.symbol_table.add(symbol);
 
   // make symbol expression
 

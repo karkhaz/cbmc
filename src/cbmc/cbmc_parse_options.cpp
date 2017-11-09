@@ -63,7 +63,6 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include <langapi/mode.h>
 
-#include "cbmc_solvers.h"
 #include "bmc.h"
 #include "version.h"
 #include "xml_interface.h"
@@ -109,6 +108,9 @@ void cbmc_parse_optionst::get_command_line_options(optionst &options)
     usage_error();
     exit(CPROVER_EXIT_USAGE_ERROR);
   }
+
+  if(cmdline.isset("paths"))
+    options.set_option("paths", true);
 
   if(cmdline.isset("program-only"))
     options.set_option("program-only", true);
@@ -547,29 +549,12 @@ int cbmc_parse_optionst::doit()
     get_message_handler());
   cbmc_solvers.set_ui(ui_message_handler.get_ui());
 
-  std::unique_ptr<cbmc_solverst::solvert> cbmc_solver;
-
-  try
-  {
-    cbmc_solver=cbmc_solvers.get_solver();
-  }
-
-  catch(const char *error_msg)
-  {
-    error() << error_msg << eom;
-    return CPROVER_EXIT_EXCEPTION;
-  }
-
-  prop_convt &prop_conv=cbmc_solver->prop_conv();
-
-  bmct bmc(
+  return bmct::do_language_agnostic_bmc(
     options,
-    goto_model.symbol_table,
-    get_message_handler(),
-    prop_conv);
-
-  // do actual BMC
-  return do_bmc(bmc);
+    goto_model,
+    ui_message_handler.get_ui(),
+    this,
+    cbmc_solvers);
 }
 
 bool cbmc_parse_optionst::set_properties()
@@ -866,35 +851,6 @@ bool cbmc_parse_optionst::process_goto_program(
   return false;
 }
 
-/// invoke main modules
-int cbmc_parse_optionst::do_bmc(bmct &bmc)
-{
-  bmc.set_ui(ui_message_handler.get_ui());
-
-  int result = CPROVER_EXIT_INTERNAL_ERROR;
-
-  // do actual BMC
-  switch(bmc.run(goto_model.goto_functions))
-  {
-    case safety_checkert::resultt::SAFE:
-      result = CPROVER_EXIT_VERIFICATION_SAFE;
-      break;
-    case safety_checkert::resultt::UNSAFE:
-      result = CPROVER_EXIT_VERIFICATION_UNSAFE;
-      break;
-    case safety_checkert::resultt::ERROR:
-      result = CPROVER_EXIT_INTERNAL_ERROR;
-      break;
-  }
-
-  // let's log some more statistics
-  debug() << "Memory consumption:" << messaget::endl;
-  memory_info(debug());
-  debug() << eom;
-
-  return result;
-}
-
 /// display command line help
 void cbmc_parse_optionst::help()
 {
@@ -923,6 +879,7 @@ void cbmc_parse_optionst::help()
     " --property id                only check one specific property\n"
     " --stop-on-fail               stop analysis once a failed property is detected\n" // NOLINT(*)
     " --trace                      give a counterexample trace for failed properties\n" //NOLINT(*)
+    " --paths                      explore paths one at a time\n" //NOLINT(*)
     "\n"
     "C/C++ frontend options:\n"
     " -I path                      set include path (C/C++)\n"
