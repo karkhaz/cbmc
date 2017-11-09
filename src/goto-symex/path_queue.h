@@ -32,6 +32,7 @@ public:
   virtual void put(branch_pointt &bp)=0;
   virtual void rm_front()=0;
   virtual std::size_t size()=0;
+  virtual std::list<branch_pointt> &internal()=0;
   bool empty(){ return size()==0; };
   static path_queuet *make_queue(std::string type);
   virtual ~path_queuet(){};
@@ -45,8 +46,45 @@ public:
   void put(branch_pointt &bp){ list.push_back(bp); }
   void rm_front(){ list.pop_front(); }
   std::size_t size(){ return list.size(); }
+  std::list<branch_pointt> &internal(){ return list; };
 private:
   std::list<branch_pointt> list;
+};
+
+#if 0
+class path_unique_targett: public path_queuet
+{
+public:
+  unique_targett(){}
+  branch_pointt &get(){ return *next(); }
+  void put(branch_pointt &bp){ list.push_back(bp); }
+  void rm_front(){ list.erase(next()); }
+  std::size_t size(){ return list.size(); }
+  std::list<branch_pointt> &internal(){ return list; };
+private:
+  10k
+  std::list<branch_pointt> list;
+  irep_idt last_function;
+  bpit next();
+};
+#endif
+
+class path_local_advancet: public path_queuet
+{
+public:
+  path_local_advancet():
+    last_function("")
+  {}
+  branch_pointt &get(){ return *next(); }
+  void put(branch_pointt &bp){ list.push_back(bp); }
+  void rm_front(){ list.erase(next()); }
+  std::size_t size(){ return list.size(); }
+  std::list<branch_pointt> &internal(){ return list; };
+private:
+  typedef std::list<branch_pointt>::iterator bpit;
+  std::list<branch_pointt> list;
+  irep_idt last_function;
+  bpit next();
 };
 
 #endif // CPROVER_SYMEX_PATH_QUEUE_H

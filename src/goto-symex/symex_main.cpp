@@ -11,6 +11,7 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include "goto_symex.h"
 
+#include <iostream>
 #include <cassert>
 #include <memory>
 

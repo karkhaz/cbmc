@@ -606,14 +606,20 @@ int bmct::do_language_agnostic_bmc(
 
     while(!worklist->empty())
     {
-      message->status() << "WORKLIST:\n";
       message->status() << "___________________________\n"
-        << "Starting new path (" << worklist->size() << " to go)\n"
-        << message->eom;
+        << "Starting new path (" << worklist->size() << " to go). WORKLIST:\n";
+      //message->status() << "START:\n";
+      //for(auto &bp : worklist->internal())
+      //{
+      //  message->status() << bp.state.source.pc->source_location << "\n";
+      //}
+      //message->status() << "STOP\n";
       std::unique_ptr<cbmc_solverst::solvert> cbmc_solver;
       cbmc_solver=solvers.get_solver();
       prop_convt &pc=cbmc_solver->prop_conv();
       branch_pointt &resume=worklist->get();
+      //message->status() << "Path starts at " << resume.state.source.pc->source_location
+      //  << message->eom;
       path_explorert pe(opts,
           goto_model.symbol_table, mh, pc, resume.equation,
           resume.state, *worklist);

@@ -471,7 +471,8 @@ bvt bv_pointerst::convert_bitvector(const exprt &expr)
 
     mp_integer element_size=
       pointer_offset_size(expr.op0().type().subtype(), ns);
-    DATA_INVARIANT(element_size>0, "object size expected to be non-zero");
+    DATA_INVARIANT(element_size>0, "object size expected to be non-zero"
+        + expr.pretty());
 
     if(element_size!=1)
     {

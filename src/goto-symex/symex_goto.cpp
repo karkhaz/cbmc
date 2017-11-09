@@ -25,6 +25,7 @@ void goto_symext::symex_goto(statet &state)
   const goto_programt::instructiont &instruction=*state.source.pc;
   statet::framet &frame=state.top();
 
+
   exprt old_guard=instruction.guard;
   clean_expr(old_guard, state, false);
 
@@ -54,6 +55,9 @@ void goto_symext::symex_goto(statet &state)
   goto_programt::const_targett goto_target=
     instruction.get_target();
 
+  //std::cerr << "==== Calling symex-goto with guard "<< 
+  //  instruction.source_location << "\n====and target " 
+  //  << goto_target->source_location << "\n";
   bool forward=!instruction.is_backwards_goto();
 
   if(!forward) // backwards?
@@ -164,7 +168,7 @@ void goto_symext::symex_goto(statet &state)
     goto_programt::const_targett tmp=new_state_pc;
     new_state_pc=state_pc;
     state_pc=tmp;
-    std::cerr << "Resuming from '" << state_pc->code.source_location() << "'\n";
+    std::cerr << "Resuming from '" << state_pc->source_location << "'\n";
   }
   else if(options.get_bool_option("paths"))
   {
@@ -180,6 +184,7 @@ void goto_symext::symex_goto(statet &state)
     branch_point.state.has_saved_target=true;
     branch_point.state.saved_target_is_backwards=forward;
     path_queue.put(branch_point);
+    std::cerr << "Saving " << new_state_pc->source_location << "\n";
   }
 
   // put into state-queue

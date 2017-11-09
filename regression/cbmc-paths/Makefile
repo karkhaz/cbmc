@@ -20,7 +20,7 @@ CBMC ?=../../../../src/cbmc/cbmc
 tests.log: ../test.pl
 	@mkdir -p tmp
 	@cp -r $(CBMC_PATH_DIRS) tmp
-	@cd tmp && if ! ../../test.pl -c "$(CBMC) --paths" ; then \
+	@cd tmp && if ! ../../test.pl -c "$(CBMC) --paths --path-queue local-advance" ; then \
 	  ../../failed-tests-printer.pl ; \
 	  exit 1 ; \
 	fi
