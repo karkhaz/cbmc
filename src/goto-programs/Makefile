@@ -1,5 +1,4 @@
-SRC = basic_blocks.cpp \
-      builtin_functions.cpp \
+SRC = builtin_functions.cpp \
       class_hierarchy.cpp \
       class_identifier.cpp \
       compute_called_functions.cpp \
