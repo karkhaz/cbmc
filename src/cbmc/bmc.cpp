@@ -628,6 +628,15 @@ int bmct::do_language_agnostic_bmc(
         "model checking, but the worklist contains "+
         std::to_string(worklist.size())+" unexplored branches.");
 
+    // The sets of source locations that would be touched by executing a
+    // basic block starting at the key source location
+    std::unordered_map<unsigned, std::set<unsigned>> locs_of_blocks;
+    bmct::calculate_blocks_to_locs(goto_model, locs_of_blocks);
+    std::vector<unsigned> targets_popped;
+    std::cerr << "FINAL MAP\n";
+    for(const auto &pair : locs_of_blocks)
+      std::cerr << pair.first << ": " << pair.second.size() << "\n";
+
     while(!worklist.empty())
     {
       message.status() << "___________________________\n"
@@ -638,20 +647,39 @@ int bmct::do_language_agnostic_bmc(
           goto_model.symbol_table,
           message.get_message_handler());
       solvers.set_ui(ui);
+
       std::unique_ptr<cbmc_solverst::solvert> cbmc_solver;
       cbmc_solver=solvers.get_solver();
       prop_convt &pc=cbmc_solver->prop_conv();
-      goto_symext::branch_pointt &resume=worklist.front();
+
+      std::map<unsigned, unsigned> wl_freqs;
+      for(const auto &bp : worklist)
+        ++wl_freqs[bp.state.source.pc->location_number];
+      for(const auto &pair : wl_freqs)
+        std::cerr << pair.second << " occurrences of " << pair.first << "\n";
+
+      goto_symext::branch_worklistt::iterator resume;
+      bmct::next_state(locs_of_blocks, worklist, targets_popped, resume);
+      std::cerr << "Chose block starting at " <<
+        resume->state.source.pc->location_number << " with trans size " <<
+        locs_of_blocks[resume->state.source.pc->location_number].size() <<
+        "\n";
       path_explorert pe(
           opts,
           goto_model.symbol_table,
           mh,
           pc,
-          resume.equation,
-          resume.state,
+          resume->equation,
+          resume->state,
           worklist);
       result&=pe.run(goto_model.goto_functions);
-      worklist.pop_front();
+
+      const auto &to_pop=std::find(targets_popped.begin(), targets_popped.end(),
+          resume->state.source.pc->location_number);
+      if(to_pop!=targets_popped.end())
+        targets_popped.erase(to_pop);
+      targets_popped.push_back(resume->state.source.pc->location_number);
+      worklist.erase(resume);
     }
   }
   catch(const char *error_msg)
@@ -727,6 +755,189 @@ bool bmct::set_path_exploration_options(
         static_cast<unsigned int>(optionst::goto_priorityt::NEXT));
   }
   return false;
+}
+
+void bmct::next_state(
+    const std::unordered_map<unsigned, std::set<unsigned>> &locs_of_blocks,
+    goto_symext::branch_worklistt &worklist,
+    const std::vector<unsigned> &targets_popped,
+    goto_symext::branch_worklistt::iterator &ret)
+{
+  typedef goto_symext::branch_worklistt::iterator return_t;
+  ret=worklist.begin();
+  unsigned location_nr=ret->state.source.pc->location_number;
+  const auto &loc_pair=locs_of_blocks.find(location_nr);
+  INVARIANT(loc_pair!=locs_of_blocks.end(),
+      "Saved branch point with location number "+std::to_string(location_nr)+
+      " is not the beginning of a basic block (init)");
+  if(worklist.size()==1)
+    return;
+  unsigned max_locs=loc_pair->second.size();
+  for(return_t bp=++worklist.begin(); bp!=worklist.end(); ++bp)
+  {
+    location_nr=bp->state.source.pc->location_number;
+    const auto &loc_pair=locs_of_blocks.find(location_nr);
+    INVARIANT(loc_pair!=locs_of_blocks.end(),
+        "Saved branch point with location number "+std::to_string(location_nr)+
+        " is not the beginning of a basic block (loop)");
+    unsigned current_locs=loc_pair->second.size();
+    if(current_locs>max_locs)
+    {
+      max_locs=current_locs;
+      ret=bp;
+    }
+    else if(current_locs==max_locs)
+    {
+      // Prefer the one that we've popped least recently.
+      const auto &max_pop=std::find(targets_popped.begin(),
+          targets_popped.end(), ret->state.source.pc->location_number);
+      const auto &cur_pop=std::find(targets_popped.begin(),
+          targets_popped.end(), ret->state.source.pc->location_number);
+      if(max_pop!=targets_popped.end()&&cur_pop!=targets_popped.end())
+      {
+        if(max_pop>cur_pop)
+        {
+          max_locs=current_locs;
+          ret=bp;
+        }
+      }
+      else if(max_pop!=targets_popped.end())
+      {
+        max_locs=current_locs;
+        ret=bp;
+      }
+    }
+  }
+}
+
+void bmct::calculate_blocks_to_locs(
+    const goto_modelt &goto_model,
+    std::unordered_map<unsigned, std::set<unsigned>> &blocks_to_locs)
+{
+  std::unordered_map<irep_idt, std::set<unsigned>, irep_id_hash>
+    transitive_lines;
+  bmct::calculate_transitive_lines(goto_model, transitive_lines);
+
+  std::map<goto_programt::const_targett, std::set<unsigned>> target_locs;
+
+  // This is NOT general-purpose block-computation code: in particular,
+  // a function call does not terminate a block.
+  forall_goto_functions(f_it, goto_model.goto_functions)
+  {
+    std::cerr << "FUN " << f_it->first << "\n";
+    bool block_start=true;
+    goto_programt::const_targett current_block;
+    forall_goto_program_instructions(it, f_it->second.body)
+    {
+      std::cerr << "INS " << it->source_location << "is-target: " <<
+        it->is_target() << ", next-is: " << block_start << "\n";
+      // Is it a potential beginning of a block?
+      if(it->is_target()||block_start||it->is_goto())
+      {
+        // We keep the block number if this potential block is a
+        // continuation of a previous block through unconditional
+        // forward gotos; otherwise we increase the block number.
+        bool is_block_begin=true;
+        if(it->incoming_edges.size()==1)
+        {
+          goto_programt::targett in_t=*it->incoming_edges.begin();
+          if(in_t->is_goto() &&
+             !in_t->is_backwards_goto() &&
+             in_t->guard.is_true())
+          {
+            is_block_begin=false;
+            current_block=in_t;
+          }
+        }
+        if(is_block_begin)
+        {
+          std::cerr << "BEGIN\n";
+          current_block=it;
+          target_locs[current_block]=std::set<unsigned>();
+        }
+      }
+      block_start=false;
+      std::cerr << "Inserting " << it->location_number << " into " <<
+        current_block->location_number << "\n";
+      target_locs[current_block].insert(it->location_number);
+      if(it->is_function_call())
+      {
+        const code_function_callt &call=to_code_function_call(it->code);
+        const irep_idt &call_name=call.function().get("identifier");
+        INVARIANT(transitive_lines.find(call_name)!=transitive_lines.end(),
+            "Could not find function call '"+std::string(call_name.c_str())+
+            "' in the transitive lines map");
+        target_locs[current_block].insert(
+            transitive_lines[call_name].begin(),
+            transitive_lines[call_name].end());
+      }
+      // The !is_target ensures that the guards of while statements don't get
+      // put in a block by themselves
+      //next_is_target=it->is_goto()&&!it->is_target();
+    }
+  }
+  for(const auto &pair : target_locs)
+    blocks_to_locs[pair.first->location_number].insert(
+        pair.second.begin(), pair.second.end());
+  std::cerr << "ALL:\n";
+  for(const auto &pair : target_locs)
+    std::cerr << pair.first->location_number << ", ";
+  std::cerr << "\n";
+}
+
+void bmct::calculate_transitive_lines(
+    const goto_modelt &goto_model,
+    std::unordered_map<irep_idt, std::set<unsigned>, irep_id_hash>
+      &transitive_lines)
+{
+  std::unordered_map<irep_idt, std::set<unsigned>, irep_id_hash> original_lines;
+  forall_goto_functions(f_it, goto_model.goto_functions)
+  {
+    std::set<unsigned> &line_set=original_lines[f_it->first];
+    forall_goto_program_instructions(it, f_it->second.body)
+      line_set.insert(it->location_number);
+  }
+
+  forall_goto_functions(f_it, goto_model.goto_functions)
+  {
+    std::list<irep_idt> worklist={f_it->first};
+    transitive_lines[f_it->first].insert(
+        original_lines[f_it->first].begin(),
+        original_lines[f_it->first].end());
+    std::unordered_set<irep_idt, irep_id_hash> seen={f_it->first};
+    while(!worklist.empty())
+    {
+      const irep_idt &fun_name=worklist.front();
+      if(fun_name.empty())
+        continue;
+      const auto explore_it=goto_model.goto_functions.
+        function_map.find(fun_name);
+      INVARIANT(explore_it!=goto_model.goto_functions.function_map.end(),
+          "Could not find function '"+std::string(fun_name.c_str())+
+          "' in function map");
+      forall_goto_program_instructions(it, explore_it->second.body)
+      {
+        if(it->is_function_call())
+        {
+          const code_function_callt &call=to_code_function_call(it->code);
+          const irep_idt &call_name=call.function().get("identifier");
+          transitive_lines[f_it->first].insert(
+              original_lines[call_name].begin(),
+              original_lines[call_name].end());
+          const auto found=seen.find(call_name);
+          if(found==seen.end())
+          {
+            seen.insert(call_name);
+            worklist.push_back(call_name);
+            INVARIANT(original_lines.find(call_name)!=original_lines.end(),
+                "Could not find function '"+std::string(call_name.c_str())+
+                "' during traversal of program");
+          }
+        }
+      }
+      worklist.pop_front();
+    }
+  }
 }
 
 void bmct::perform_symbolic_execution(

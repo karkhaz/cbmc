@@ -215,6 +215,28 @@ protected:
   friend class bmc_goal_covert;
   friend class fault_localizationt;
 
+/// \brief Statically-reachable source locations from each function
+///
+/// \returns a map from function names to the set of program location
+///          numbers that could be executed when calling that function.
+///          This is a transitive closure (takes into account functions
+///          called by the key function), and is the set of statically-
+///          reachable functions (i.e. an overapproximation)
+static void calculate_transitive_lines(
+    const goto_modelt &goto_model,
+    std::unordered_map<irep_idt, std::set<unsigned>, irep_id_hash>
+      &transitive_lines);
+
+static void calculate_blocks_to_locs(
+    const goto_modelt &goto_model,
+    std::unordered_map<unsigned, std::set<unsigned>> &blocks_to_locs);
+
+static void next_state(
+    const std::unordered_map<unsigned, std::set<unsigned>> &locs_of_blocks,
+    goto_symext::branch_worklistt &worklist,
+    const std::vector<unsigned> &targets_popped,
+    goto_symext::branch_worklistt::iterator &ret);
+
 private:
   /// \brief Class-specific symbolic execution
   ///
