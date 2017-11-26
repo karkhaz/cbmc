@@ -615,6 +615,7 @@ goto_programt::const_targett goto_program2codet::convert_goto_while(
   else if(!loop_end->guard.is_true())
   {
     code_ifthenelset i;
+    i.source_location().pretty();
 
     i.cond()=not_exprt(loop_end->guard);
     simplify(i.cond(), ns);

@@ -87,6 +87,7 @@ SRC = arith_tools.cpp \
       threeval.cpp \
       time_stopping.cpp \
       timer.cpp \
+      timestamper.cpp \
       type.cpp \
       type_eq.cpp \
       typecheck.cpp \

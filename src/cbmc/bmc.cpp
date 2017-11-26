@@ -637,6 +637,8 @@ int bmct::do_language_agnostic_bmc(
     for(const auto &pair : locs_of_blocks)
       std::cerr << pair.first << ": " << pair.second.size() << "\n";
 
+    std::set<unsigned> chosen_locations;
+
     while(!worklist.empty())
     {
       message.status() << "___________________________\n"
@@ -659,7 +661,8 @@ int bmct::do_language_agnostic_bmc(
         std::cerr << pair.second << " occurrences of " << pair.first << "\n";
 
       goto_symext::branch_worklistt::iterator resume;
-      bmct::next_state(locs_of_blocks, worklist, targets_popped, resume);
+      bmct::next_state(locs_of_blocks, worklist, targets_popped, resume,
+          chosen_locations);
       std::cerr << "Chose block starting at " <<
         resume->state.source.pc->location_number << " with trans size " <<
         locs_of_blocks[resume->state.source.pc->location_number].size() <<
@@ -716,66 +719,31 @@ int bmct::do_language_agnostic_bmc(
   UNREACHABLE;
 }
 
-bool bmct::set_path_exploration_options(
-    const cmdlinet &cmdline,
-    optionst &options,
-    messaget &log)
-{
-  if(cmdline.isset("paths"))
-    options.set_option("paths", true);
-
-  if(cmdline.isset("goto-priority"))
-  {
-    const std::string &priority=cmdline.get_value("goto-priority");
-    if(priority=="jump")
-    {
-      options.set_option("goto-priority",
-          static_cast<unsigned int>(optionst::goto_priorityt::JUMP));
-    }
-    else if(priority=="next")
-    {
-      options.set_option("goto-priority",
-          static_cast<unsigned int>(optionst::goto_priorityt::NEXT));
-    }
-    else
-    {
-      log.error() << "Invalid goto-priority '" << priority << "', use "
-                     "one of 'next' or 'jump'." << log.eom;
-      return true;
-    }
-  }
-  else if(options.get_bool_option("paths"))
-  {
-    options.set_option("goto-priority",
-        static_cast<unsigned int>(optionst::goto_priorityt::JUMP));
-  }
-  else
-  {
-    options.set_option("goto-priority",
-        static_cast<unsigned int>(optionst::goto_priorityt::NEXT));
-  }
-  return false;
-}
-
 void bmct::next_state(
     const std::unordered_map<unsigned, std::set<unsigned>> &locs_of_blocks,
     goto_symext::branch_worklistt &worklist,
     const std::vector<unsigned> &targets_popped,
-    goto_symext::branch_worklistt::iterator &ret)
+    goto_symext::branch_worklistt::iterator &ret,
+    std::set<unsigned> &chosen_locs)
 {
-  typedef goto_symext::branch_worklistt::iterator return_t;
-  ret=worklist.begin();
-  unsigned location_nr=ret->state.source.pc->location_number;
-  const auto &loc_pair=locs_of_blocks.find(location_nr);
-  INVARIANT(loc_pair!=locs_of_blocks.end(),
-      "Saved branch point with location number "+std::to_string(location_nr)+
-      " is not the beginning of a basic block (init)");
+  typedef goto_symext::branch_worklistt::iterator returnt;
+  unsigned location_nr=0;
   if(worklist.size()==1)
+  {
+  chosen_locs.insert(ret->state.source.pc->location_number);
     return;
-  unsigned max_locs=loc_pair->second.size();
-  for(return_t bp=++worklist.begin(); bp!=worklist.end(); ++bp)
+  }
+  unsigned max_locs=0;
+  for(returnt bp=worklist.begin(); bp!=worklist.end(); ++bp)
   {
     location_nr=bp->state.source.pc->location_number;
+    const auto it=chosen_locs.find(location_nr);
+    if(it!=chosen_locs.end())
+    {
+      std::cerr << "Not using " << location_nr << " as we've already "
+        "seen it\n";
+      continue;
+    }
     const auto &loc_pair=locs_of_blocks.find(location_nr);
     INVARIANT(loc_pair!=locs_of_blocks.end(),
         "Saved branch point with location number "+std::to_string(location_nr)+
@@ -785,6 +753,8 @@ void bmct::next_state(
     {
       max_locs=current_locs;
       ret=bp;
+      std::cerr << "Changing ret to loc " << bp->state.source.pc->location_number
+        << " because of locs " << current_locs << "\n";
     }
     else if(current_locs==max_locs)
     {
@@ -793,21 +763,26 @@ void bmct::next_state(
           targets_popped.end(), ret->state.source.pc->location_number);
       const auto &cur_pop=std::find(targets_popped.begin(),
           targets_popped.end(), ret->state.source.pc->location_number);
-      if(max_pop!=targets_popped.end()&&cur_pop!=targets_popped.end())
+      if(max_pop!=targets_popped.end() && cur_pop!=targets_popped.end())
       {
         if(max_pop>cur_pop)
         {
+      std::cerr << "Changing ret to loc " << bp->state.source.pc->location_number
+        << " because of least recently popped\n";
           max_locs=current_locs;
           ret=bp;
         }
       }
       else if(max_pop!=targets_popped.end())
       {
+      std::cerr << "Changing ret to loc " << bp->state.source.pc->location_number
+        << " because of dunno\n";
         max_locs=current_locs;
         ret=bp;
       }
     }
   }
+  chosen_locs.insert(ret->state.source.pc->location_number);
 }
 
 void bmct::calculate_blocks_to_locs(
@@ -832,7 +807,7 @@ void bmct::calculate_blocks_to_locs(
       std::cerr << "INS " << it->source_location << "is-target: " <<
         it->is_target() << ", next-is: " << block_start << "\n";
       // Is it a potential beginning of a block?
-      if(it->is_target()||block_start||it->is_goto())
+      if(it->is_target() || block_start || it->is_goto())
       {
         // We keep the block number if this potential block is a
         // continuation of a previous block through unconditional
@@ -873,7 +848,7 @@ void bmct::calculate_blocks_to_locs(
       }
       // The !is_target ensures that the guards of while statements don't get
       // put in a block by themselves
-      //next_is_target=it->is_goto()&&!it->is_target();
+      // next_is_target=it->is_goto()&&!it->is_target();
     }
   }
   for(const auto &pair : target_locs)
@@ -938,6 +913,47 @@ void bmct::calculate_transitive_lines(
       worklist.pop_front();
     }
   }
+}
+
+bool bmct::set_path_exploration_options(
+    const cmdlinet &cmdline,
+    optionst &options,
+    messaget &log)
+{
+  if(cmdline.isset("paths"))
+    options.set_option("paths", true);
+
+  if(cmdline.isset("goto-priority"))
+  {
+    const std::string &priority=cmdline.get_value("goto-priority");
+    if(priority=="jump")
+    {
+      options.set_option("goto-priority",
+          static_cast<unsigned int>(optionst::goto_priorityt::JUMP));
+    }
+    else if(priority=="next")
+    {
+      options.set_option("goto-priority",
+          static_cast<unsigned int>(optionst::goto_priorityt::NEXT));
+    }
+    else
+    {
+      log.error() << "Invalid goto-priority '" << priority << "', use "
+                     "one of 'next' or 'jump'." << log.eom;
+      return true;
+    }
+  }
+  else if(options.get_bool_option("paths"))
+  {
+    options.set_option("goto-priority",
+        static_cast<unsigned int>(optionst::goto_priorityt::JUMP));
+  }
+  else
+  {
+    options.set_option("goto-priority",
+        static_cast<unsigned int>(optionst::goto_priorityt::NEXT));
+  }
+  return false;
 }
 
 void bmct::perform_symbolic_execution(

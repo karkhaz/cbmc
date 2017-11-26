@@ -98,6 +98,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include "undefined_functions.h"
 #include "remove_function.h"
 #include "splice_call.h"
+#include "goto_program2code.h"
 
 void goto_instrument_parse_optionst::eval_verbosity()
 {
@@ -558,6 +559,25 @@ int goto_instrument_parse_optionst::doit()
     if(cmdline.isset("show-natural-loops"))
     {
       show_natural_loops(goto_model, std::cout);
+      return CPROVER_EXIT_SUCCESS;
+    }
+
+    if(cmdline.isset("print-code-blocks"))
+    {
+      for(auto const &pair : goto_model.goto_functions.function_map)
+      {
+        code_blockt block;
+        symbol_tablet st_copy(goto_model.symbol_table);
+        std::list<irep_idt> local_static, type_names;
+        const std::unordered_set<irep_idt, irep_id_hash> typedef_names;
+        std::set<std::string> system_headers;
+        goto_program2codet g2c(pair.first, pair.second.body, st_copy,
+            block, local_static, type_names, typedef_names,
+            system_headers);
+        g2c();
+        std::cout << "FUNCTION " << pair.first << "\n" << block.pretty()
+          << "\n";
+      }
       return CPROVER_EXIT_SUCCESS;
     }
 
@@ -1530,5 +1550,6 @@ void goto_instrument_parse_optionst::help()
     " --version                    show version and exit\n"
     " --xml-ui                     use XML-formatted output\n"
     " --json-ui                    use JSON-formatted output\n"
+    HELP_TIMESTAMP
     "\n";
 }

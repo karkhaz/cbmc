@@ -75,9 +75,7 @@ void console_message_handlert::print(
   // above go to cout.
 
   if(level>=4)
-  {
     std::cout << message << '\n';
-  }
   else
     std::cerr << message << '\n';
   #endif

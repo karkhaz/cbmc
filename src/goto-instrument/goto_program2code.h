@@ -77,6 +77,7 @@ public:
   void operator()();
 
 protected:
+  unsigned indent;
   const irep_idt &func_name;
   const goto_programt &goto_program;
   symbol_tablet &symbol_table;

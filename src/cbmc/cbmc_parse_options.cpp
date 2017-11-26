@@ -959,5 +959,6 @@ void cbmc_parse_optionst::help()
     " --xml-interface              bi-directional XML interface\n"
     " --json-ui                    use JSON-formatted output\n"
     " --verbosity #                verbosity level\n"
+    HELP_TIMESTAMP
     "\n";
 }

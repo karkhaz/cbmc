@@ -15,6 +15,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/ui_message.h>
 #include <util/parse_options.h>
 #include <util/language.h>
+#include <util/timestamper.h>
 
 #include <analyses/goto_check.h>
 
@@ -60,6 +61,7 @@ class optionst;
   "(version)" \
   "(cover):(symex-coverage-report):" \
   "(mm):" \
+  OPT_TIMESTAMP \
   "(i386-linux)(i386-macos)(i386-win32)(win32)(winx64)(gcc)" \
   "(ppc-macos)(unsigned-char)" \
   "(arrays-uf-always)(arrays-uf-never)" \
@@ -68,7 +70,7 @@ class optionst;
   "(localize-faults)(localize-faults-method):" \
   "(fixedbv)(floatbv)(all-claims)(all-properties)" // legacy, and will eventually disappear // NOLINT(whitespace/line_length)
 
-class cbmc_parse_optionst:
+class cbmc_parse_optionst :
   public parse_options_baset,
   public xml_interfacet,
   public messaget

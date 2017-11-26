@@ -847,5 +847,6 @@ void jbmc_parse_optionst::help()
     " --xml-ui                     use XML-formatted output\n"
     " --json-ui                    use JSON-formatted output\n"
     " --verbosity #                verbosity level\n"
+    HELP_TIMESTAMP
     "\n";
 }

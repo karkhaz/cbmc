@@ -11,16 +11,23 @@ Author: Daniel Kroening, kroening@kroening.com
 #define CPROVER_UTIL_UI_MESSAGE_H
 
 #include "message.h"
+#include "timestamper.h"
 
-class ui_message_handlert:public message_handlert
+class ui_message_handlert : public message_handlert
 {
 public:
   enum class uit { PLAIN, XML_UI, JSON_UI };
 
-  ui_message_handlert(uit, const std::string &program);
+  ui_message_handlert(
+      uit,
+      const std::string &program,
+      timestampert::clockt clock_type);
+
   ui_message_handlert(const class cmdlinet &, const std::string &program);
-  ui_message_handlert():
-    _ui(uit::PLAIN)
+
+  ui_message_handlert()
+    : _ui(uit::PLAIN),
+      time(timestampert::make(timestampert::clockt::NONE))
   {
   }
 
@@ -40,6 +47,7 @@ public:
 
 protected:
   uit _ui;
+  const timestampert *time;
 
   virtual void print(
     unsigned level,

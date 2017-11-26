@@ -15,6 +15,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/ui_message.h>
 #include <util/parse_options.h>
 #include <util/language.h>
+#include <util/timestamper.h>
 
 #include <analyses/goto_check.h>
 
@@ -58,6 +59,7 @@ class optionst;
   "(verbosity):(no-library)" \
   "(version)" \
   "(cover):(symex-coverage-report):" \
+  OPT_TIMESTAMP \
   "(i386-linux)(i386-macos)(i386-win32)(win32)(winx64)" \
   "(ppc-macos)" \
   "(arrays-uf-always)(arrays-uf-never)" \
@@ -66,7 +68,7 @@ class optionst;
   "(java-unwind-enum-static)" \
   "(localize-faults)(localize-faults-method):"
 
-class jbmc_parse_optionst:
+class jbmc_parse_optionst :
   public parse_options_baset,
   public messaget
 {

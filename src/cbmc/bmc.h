@@ -235,7 +235,8 @@ static void next_state(
     const std::unordered_map<unsigned, std::set<unsigned>> &locs_of_blocks,
     goto_symext::branch_worklistt &worklist,
     const std::vector<unsigned> &targets_popped,
-    goto_symext::branch_worklistt::iterator &ret);
+    goto_symext::branch_worklistt::iterator &ret,
+    std::set<unsigned> &chosen_locs);
 
 private:
   /// \brief Class-specific symbolic execution
