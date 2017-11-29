@@ -16,6 +16,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <iostream>
 #include <memory>
 
+#include <util/exit_codes.h>
 #include <util/string2int.h>
 #include <util/config.h>
 #include <util/language.h>
@@ -102,8 +103,11 @@ void jbmc_parse_optionst::get_command_line_options(optionst &options)
   if(config.set(cmdline))
   {
     usage_error();
-    exit(1); // should contemplate EX_USAGE from sysexits.h
+    exit(CPROVER_EXIT_USAGE_ERROR);
   }
+
+  if(bmct::set_path_exploration_options(cmdline, options, *this))
+    exit(CPROVER_EXIT_USAGE_ERROR);
 
   if(cmdline.isset("program-only"))
     options.set_option("program-only", true);
@@ -203,7 +207,7 @@ void jbmc_parse_optionst::get_command_line_options(optionst &options)
   {
     error() << "--partial-loops and --unwinding-assertions "
             << "must not be given together" << eom;
-    exit(1); // should contemplate EX_USAGE from sysexits.h
+    exit(CPROVER_EXIT_USAGE_ERROR);
   }
 
   // remove unused equations

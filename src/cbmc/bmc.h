@@ -15,6 +15,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <list>
 #include <map>
 
+#include <util/cmdline.h>
 #include <util/invariant.h>
 #include <util/options.h>
 #include <util/ui_message.h>
@@ -94,6 +95,13 @@ public:
       const goto_modelt &goto_model,
       const ui_message_handlert::uit &ui,
       messaget &message);
+
+  /// \brief common path-exploration options, set from language-specific
+  ///        frontends
+  static bool set_path_exploration_options(
+      const cmdlinet &cmdline,
+      optionst &options,
+      messaget &log);
 
 protected:
 /// \brief Constructor for path exploration from saved state
@@ -257,6 +265,7 @@ private:
   /// provided as arguments to the constructor of this class.
   void perform_symbolic_execution(
       const goto_functionst &goto_functions) override;
+};
 
 #define OPT_BMC \
   "(program-only)" \
@@ -268,6 +277,7 @@ private:
   "(no-pretty-names)" \
   "(partial-loops)" \
   "(paths)" \
+  "(goto-priority):" \
   "(depth):" \
   "(unwind):" \
   "(unwindset):" \
@@ -275,7 +285,9 @@ private:
   "(unwindset):"
 
 #define HELP_BMC \
-  " --paths                      explore paths one at a time\n" \
+  " --paths                      explore paths one at a time (implies\n" \
+  "                              `--goto-priority jump` if --goto-priority\n" \
+  "                              is not passed on the command line)\n" \
   " --program-only               only show program expression\n"  \
   " --show-loops                 show the loops in the program\n" \
   " --depth nr                   limit search depth\n"  \
@@ -287,7 +299,10 @@ private:
   " --unwinding-assertions       generate unwinding assertions\n" \
   " --partial-loops              permit paths with partial loops\n" \
   " --no-pretty-names            do not simplify identifiers\n" \
+  " --goto-priority <jump|next>  jump: execute the target of a goto first.\n" \
+  "                              next: execute the instruction following\n" \
+  "                              the goto first. Default: 'next', unless\n" \
+  "                              --paths is passed.\n" \
   " --graphml-witness filename   write the witness in GraphML format to filename\n" // NOLINT(*)
-};
 
 #endif // CPROVER_CBMC_BMC_H

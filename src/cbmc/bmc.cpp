@@ -688,6 +688,47 @@ int bmct::do_language_agnostic_bmc(
   UNREACHABLE;
 }
 
+bool bmct::set_path_exploration_options(
+    const cmdlinet &cmdline,
+    optionst &options,
+    messaget &log)
+{
+  if(cmdline.isset("paths"))
+    options.set_option("paths", true);
+
+  if(cmdline.isset("goto-priority"))
+  {
+    const std::string &priority=cmdline.get_value("goto-priority");
+    if(priority=="jump")
+    {
+      options.set_option("goto-priority",
+          static_cast<unsigned int>(optionst::goto_priorityt::JUMP));
+    }
+    else if(priority=="next")
+    {
+      options.set_option("goto-priority",
+          static_cast<unsigned int>(optionst::goto_priorityt::NEXT));
+    }
+    else
+    {
+      log.error() << "Invalid goto-priority '" << priority << "', use "
+                     "one of 'next' or 'jump'." << log.eom;
+      return true;
+    }
+  }
+  else if(options.get_bool_option("paths"))
+  {
+    options.set_option("goto-priority",
+        static_cast<unsigned int>(optionst::goto_priorityt::JUMP));
+  }
+  else
+  {
+    options.set_option("goto-priority",
+        static_cast<unsigned int>(optionst::goto_priorityt::NEXT));
+  }
+  return false;
+}
+
 void bmct::perform_symbolic_execution(
     const goto_functionst &goto_functions)
 {

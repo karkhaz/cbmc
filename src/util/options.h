@@ -52,6 +52,12 @@ public:
     return *this;
   }
 
+  enum class goto_priorityt
+  {
+    JUMP,
+    NEXT
+  };
+
 protected:
   option_mapt option_map;
   const value_listt empty_list;

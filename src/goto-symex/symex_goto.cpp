@@ -145,6 +145,24 @@ void goto_symext::symex_goto(statet &state)
     state_pc=goto_target;
   }
 
+  // Goto is conditional, so figure out which branch to take before
+  // checking whether to do path exploration or model-checking, and before
+  // adjusting guards.
+  switch(static_cast<optionst::goto_priorityt>(
+         options.get_unsigned_int_option("goto-priority")))
+  {
+    case optionst::goto_priorityt::JUMP:
+    {
+      goto_programt::const_targett tmp=new_state_pc;
+      new_state_pc=state_pc;
+      state_pc=tmp;
+      forward=!forward;
+      break;
+    }
+    case optionst::goto_priorityt::NEXT:
+      break;
+  }
+
   // Normally the next instruction to execute would be state_pc and we save
   // new_state_pc for later. But if we're executing from a saved state, then
   // new_state_pc should be the state that we saved from earlier, so let's
