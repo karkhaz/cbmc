@@ -11,8 +11,6 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include "symex_target_equation.h"
 
-#include <cassert>
-
 #include <util/std_expr.h>
 
 #include <langapi/language_util.h>
@@ -22,8 +20,7 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include "goto_symex_state.h"
 
-symex_target_equationt::symex_target_equationt(
-  const namespacet &_ns):ns(_ns)
+symex_target_equationt::symex_target_equationt()
 {
 }
 
@@ -138,7 +135,7 @@ void symex_target_equationt::assignment(
   const sourcet &source,
   assignment_typet assignment_type)
 {
-  assert(ssa_lhs.is_not_nil());
+  PRECONDITION(ssa_lhs.is_not_nil());
 
   SSA_steps.push_back(SSA_stept());
   SSA_stept &SSA_step=SSA_steps.back();
@@ -166,7 +163,7 @@ void symex_target_equationt::decl(
   const sourcet &source,
   assignment_typet assignment_type)
 {
-  assert(ssa_lhs.is_not_nil());
+  PRECONDITION(ssa_lhs.is_not_nil());
 
   SSA_steps.push_back(SSA_stept());
   SSA_stept &SSA_step=SSA_steps.back();
@@ -601,15 +598,6 @@ void symex_target_equationt::merge_ireps(SSA_stept &SSA_step)
   // converted_io_args is merged in convert_io
 }
 
-void symex_target_equationt::output(std::ostream &out) const
-{
-  for(const auto &step : SSA_steps)
-  {
-    step.output(ns, out);
-    out << "--------------\n";
-  }
-}
-
 void symex_target_equationt::SSA_stept::output(
   const namespacet &ns,
   std::ostream &out) const
@@ -708,23 +696,4 @@ void symex_target_equationt::SSA_stept::output(
     out << from_expr(ns, "", ssa_lhs) << '\n';
 
   out << "Guard: " << from_expr(ns, "", guard) << '\n';
-}
-
-std::ostream &operator<<(
-  std::ostream &out,
-  const symex_target_equationt &equation)
-{
-  equation.output(out);
-  return out;
-}
-
-std::ostream &operator<<(
-  std::ostream &out,
-  const symex_target_equationt::SSA_stept &step)
-{
-  // may cause lookup failures, since it's blank
-  symbol_tablet symbol_table;
-  namespacet ns(symbol_table);
-  step.output(ns, out);
-  return out;
 }

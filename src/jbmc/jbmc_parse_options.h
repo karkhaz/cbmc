@@ -89,7 +89,6 @@ protected:
   int get_goto_program(const optionst &);
   bool process_goto_program(const optionst &);
   bool set_properties();
-  int do_bmc(bmct &);
 };
 
 #endif // CPROVER_JBMC_JBMC_PARSE_OPTIONS_H

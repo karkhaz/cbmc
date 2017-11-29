@@ -15,6 +15,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <list>
 #include <iosfwd>
 
+#include <util/invariant.h>
 #include <util/merge_irep.h>
 
 #include <goto-programs/goto_program.h>
@@ -31,7 +32,7 @@ class prop_convt;
 class symex_target_equationt:public symex_targett
 {
 public:
-  explicit symex_target_equationt(const namespacet &_ns);
+  symex_target_equationt();
   virtual ~symex_target_equationt();
 
   // read event
@@ -291,13 +292,11 @@ public:
     SSA_stepst::iterator it=SSA_steps.begin();
     for(; s!=0; s--)
     {
-      assert(it!=SSA_steps.end());
+      PRECONDITION(it!=SSA_steps.end());
       it++;
     }
     return it;
   }
-
-  void output(std::ostream &out) const;
 
   void clear()
   {
@@ -316,8 +315,6 @@ public:
   }
 
 protected:
-  const namespacet &ns;
-
   // for enforcing sharing in the expressions stored
   merge_irept merge_irep;
   void merge_ireps(SSA_stept &SSA_step);
