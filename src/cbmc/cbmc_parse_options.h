@@ -18,6 +18,7 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include <analyses/goto_check.h>
 
+#include "bmc.h"
 #include "xml_interface.h"
 
 class bmct;
@@ -25,21 +26,21 @@ class goto_functionst;
 class optionst;
 
 #define CBMC_OPTIONS \
-  "(program-only)(preprocess)(slice-by-trace):" \
+  OPT_BMC \
+  "(preprocess)(slice-by-trace):" \
   OPT_FUNCTIONS \
-  "(no-simplify)(unwind):(unwindset):(slice-formula)(full-slice)" \
+  "(no-simplify)(full-slice)" \
   "(debug-level):(no-propagation)(no-simplify-if)" \
   "(document-subgoals)(outfile):(test-preprocessor)" \
   "D:I:(c89)(c99)(c11)(cpp98)(cpp03)(cpp11)" \
   "(object-bits):" \
-  "(depth):(partial-loops)(no-unwinding-assertions)(unwinding-assertions)" \
   OPT_GOTO_CHECK \
   "(no-assertions)(no-assumptions)" \
   "(no-built-in-assertions)" \
   "(xml-ui)(xml-interface)(json-ui)" \
   "(smt1)(smt2)(fpa)(cvc3)(cvc4)(boolector)(yices)(z3)(opensmt)(mathsat)" \
   "(no-sat-preprocessor)" \
-  "(no-pretty-names)(beautify)" \
+  "(beautify)" \
   "(dimacs)(refine)(max-node-refinement):(refine-arrays)(refine-arithmetic)"\
   "(refine-strings)" \
   "(string-non-empty)" \
@@ -48,8 +49,8 @@ class optionst;
   "(string-max-input-length):" \
   "(aig)(16)(32)(64)(LP64)(ILP64)(LLP64)(ILP32)(LP32)" \
   "(little-endian)(big-endian)" \
-  "(show-goto-functions)(show-loops)" \
-  "(show-symbol-table)(show-parse-tree)(show-vcc)" \
+  "(show-goto-functions)" \
+  "(show-symbol-table)(show-parse-tree)" \
   "(show-claims)(claim):(show-properties)" \
   "(drop-unused-functions)" \
   "(property):(stop-on-fail)(trace)" \
@@ -63,7 +64,6 @@ class optionst;
   "(arrays-uf-always)(arrays-uf-never)" \
   "(string-abstraction)(no-arch)(arch):" \
   "(round-to-nearest)(round-to-plus-inf)(round-to-minus-inf)(round-to-zero)" \
-  "(graphml-witness):" \
   "(localize-faults)(localize-faults-method):" \
   "(fixedbv)(floatbv)(all-claims)(all-properties)" // legacy, and will eventually disappear // NOLINT(whitespace/line_length)
 

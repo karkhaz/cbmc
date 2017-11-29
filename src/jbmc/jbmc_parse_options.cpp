@@ -20,7 +20,6 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/config.h>
 #include <util/language.h>
 #include <util/unicode.h>
-#include <util/memory_info.h>
 #include <util/invariant.h>
 
 #include <ansi-c/ansi_c_language.h>
@@ -64,8 +63,6 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include <java_bytecode/java_bytecode_language.h>
 
-#include <cbmc/cbmc_solvers.h>
-#include <cbmc/bmc.h>
 #include <cbmc/version.h>
 
 jbmc_parse_optionst::jbmc_parse_optionst(int argc, const char **argv):
@@ -499,37 +496,11 @@ int jbmc_parse_optionst::doit()
   if(options.get_bool_option("java-unwind-enum-static"))
     remove_static_init_loops(goto_model, options, get_message_handler());
 
-  // get solver
-  cbmc_solverst jbmc_solvers(
+  return bmct::do_language_agnostic_bmc(
     options,
-    goto_model.symbol_table,
-    get_message_handler());
-
-  jbmc_solvers.set_ui(ui_message_handler.get_ui());
-
-  std::unique_ptr<cbmc_solverst::solvert> jbmc_solver;
-
-  try
-  {
-    jbmc_solver=jbmc_solvers.get_solver();
-  }
-
-  catch(const char *error_msg)
-  {
-    error() << error_msg << eom;
-    return 1; // should contemplate EX_SOFTWARE from sysexits.h
-  }
-
-  prop_convt &prop_conv=jbmc_solver->prop_conv();
-
-  bmct bmc(
-    options,
-    goto_model.symbol_table,
-    get_message_handler(),
-    prop_conv);
-
-  // do actual BMC
-  return do_bmc(bmc);
+    goto_model,
+    ui_message_handler.get_ui(),
+    *this);
 }
 
 bool jbmc_parse_optionst::set_properties()
@@ -789,35 +760,6 @@ bool jbmc_parse_optionst::process_goto_program(
   return false;
 }
 
-/// invoke main modules
-int jbmc_parse_optionst::do_bmc(bmct &bmc)
-{
-  bmc.set_ui(ui_message_handler.get_ui());
-
-  int result=6;
-
-  // do actual BMC
-  switch(bmc.run(goto_model.goto_functions))
-  {
-    case safety_checkert::resultt::SAFE:
-      result=0;
-      break;
-    case safety_checkert::resultt::UNSAFE:
-      result=10;
-      break;
-    case safety_checkert::resultt::ERROR:
-      result=6;
-      break;
-  }
-
-  // let's log some more statistics
-  debug() << "Memory consumption:" << messaget::endl;
-  memory_info(debug());
-  debug() << eom;
-
-  return result;
-}
-
 /// display command line help
 void jbmc_parse_optionst::help()
 {
@@ -872,18 +814,7 @@ void jbmc_parse_optionst::help()
     " --java-unwind-enum-static    try to unwind loops in static initialization of enums\n" // NOLINT(*)
     "\n"
     "BMC options:\n"
-    " --program-only               only show program expression\n"
-    " --show-loops                 show the loops in the program\n"
-    " --depth nr                   limit search depth\n"
-    " --unwind nr                  unwind nr times\n"
-    " --unwindset L:B,...          unwind loop L with a bound of B\n"
-    "                              (use --show-loops to get the loop IDs)\n"
-    " --show-vcc                   show the verification conditions\n"
-    " --slice-formula              remove assignments unrelated to property\n"
-    " --unwinding-assertions       generate unwinding assertions\n"
-    " --partial-loops              permit paths with partial loops\n"
-    " --no-pretty-names            do not simplify identifiers\n"
-    " --graphml-witness filename   write the witness in GraphML format to filename\n" // NOLINT(*)
+    HELP_BMC
     "\n"
     "Backend options:\n"
     " --object-bits n              number of bits used for object addresses\n"

@@ -15,10 +15,12 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <iostream>
 #include <memory>
 
+#include <util/exit_codes.h>
 #include <util/string2int.h>
 #include <util/source_location.h>
 #include <util/string_utils.h>
 #include <util/time_stopping.h>
+#include <util/memory_info.h>
 #include <util/message.h>
 #include <util/json.h>
 #include <util/cprover_prefix.h>
@@ -37,6 +39,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <goto-symex/memory_model_tso.h>
 #include <goto-symex/memory_model_pso.h>
 
+#include "cbmc_solvers.h"
 #include "counterexample_beautification.h"
 #include "fault_localization.h"
 
@@ -594,4 +597,68 @@ void bmct::setup_unwind()
 
   if(options.get_option("unwind")!="")
     symex.set_unwind_limit(options.get_unsigned_int_option("unwind"));
+}
+
+int bmct::do_language_agnostic_bmc(
+    const optionst &opts,
+    const goto_modelt &goto_model,
+    const ui_message_handlert::uit &ui,
+    messaget &message)
+{
+  cbmc_solverst solvers(
+      opts,
+      goto_model.symbol_table,
+      message.get_message_handler());
+  solvers.set_ui(ui);
+  std::unique_ptr<cbmc_solverst::solvert> solver;
+  try
+  {
+    solver=solvers.get_solver();
+  }
+  catch(const char *error_msg)
+  {
+    message.error() << error_msg << message.eom;
+    return CPROVER_EXIT_EXCEPTION;
+  }
+  catch(const std::string &error_msg)
+  {
+    message.error() << error_msg << message.eom;
+    return CPROVER_EXIT_EXCEPTION;
+  }
+  catch(...)
+  {
+    message.error() << "unable to get solver" << message.eom;
+    return CPROVER_EXIT_EXCEPTION;
+  }
+
+  bmct bmc(
+      opts,
+      goto_model.symbol_table,
+      message.get_message_handler(),
+      solver->prop_conv());
+
+  bmc.set_ui(ui);
+
+  int result = CPROVER_EXIT_INTERNAL_ERROR;
+
+  // do actual BMC
+  switch(bmc.run(goto_model.goto_functions))
+  {
+    case safety_checkert::resultt::SAFE:
+      result = CPROVER_EXIT_VERIFICATION_SAFE;
+      break;
+    case safety_checkert::resultt::UNSAFE:
+      result = CPROVER_EXIT_VERIFICATION_UNSAFE;
+      break;
+    case safety_checkert::resultt::ERROR:
+      result = CPROVER_EXIT_INTERNAL_ERROR;
+      break;
+  }
+
+  // let's log some more statistics
+  message.debug() << "Memory consumption:" << messaget::endl;
+  memory_info(message.debug());
+  message.debug() << eom;
+
+  return result;
 }
