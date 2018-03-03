@@ -57,6 +57,9 @@ regression/**/*.smt2
 # regression/coverage file
 /regression/coverage_**
 
+# These files are generated from the test.in file in their directories
+regression/cbmc-path-strategies/*/*.desc
+
 # files stored by editors
 *~
 

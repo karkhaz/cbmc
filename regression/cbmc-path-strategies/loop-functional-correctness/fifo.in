@@ -1,0 +1,31 @@
+CORE
+main.c
+--unwind 2 --paths
+activate-multi-line-match
+SIGNAL=0
+EXIT=10
+--
+^warning: ignoring
+--
+This tests the following:
+
+- Symex saves the path that traverses the loop once, then the path that
+  traverses the loop twice;
+
+- Symex pops the path that traverses the loop once, then the path that
+  traverses the loop twice.
+
+The path that traverses the loop twice is the one that would cause an
+assertion failure, thus that result must appear last rather than second
+last.
+
+Test that the following happens in order:
+// Loop 0 times
+path is successful
+any lines
+// Loop once
+path is successful
+any lines
+// Loop twice
+path is unsuccessful
+end

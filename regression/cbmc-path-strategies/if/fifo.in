@@ -1,0 +1,22 @@
+CORE
+main.c
+--paths
+activate-multi-line-match
+EXIT=0
+SIGNAL=0
+--
+^warning: ignoring
+--
+Test that the following happens in order:
+execute line 4
+save line 7
+execute line 5
+any lines
+path is successful
+any lines
+execute line 4
+resume line 7
+execute line 7
+any lines
+path is successful
+end

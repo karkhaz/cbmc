@@ -1,0 +1,50 @@
+CORE
+main.c
+--unwind 2 --paths
+activate-multi-line-match
+EXIT=0
+SIGNAL=0
+--
+^warning: ignoring
+--
+Test that the following happens in order:
+execute line 4
+//
+// Save that the loop condition was never satisfied
+//
+save line 8
+execute line 6
+any lines
+execute line 4
+unwind
+//
+// Save that the loop condition was satisfied once but not twice
+//
+save line 8
+execute line 6
+any lines
+//
+// Escape the loop
+//
+execute line 8
+any lines
+path is successful
+//
+// Now do the first break out of the loop...
+//
+any lines
+execute line 4
+resume line 8
+execute line 8
+any lines
+path is successful
+//
+// ...and the second.
+//
+any lines
+execute line 4
+resume line 8
+execute line 8
+any lines
+path is successful
+end
