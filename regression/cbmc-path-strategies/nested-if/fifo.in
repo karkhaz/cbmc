@@ -9,29 +9,47 @@ SIGNAL=0
 --
 Test that the following happens in order:
 execute line 4
-save line 13
+save next 6
+save jump 13
+
+any lines
+execute line 4
+resume next 6
 execute line 6
-save line 9
+save next 7
+save jump 9
+
+any lines
+execute line 4
+resume jump 13
+execute line 13
+save next 14
+save jump 16
+
+any lines
+execute line 6
+resume next 7
 execute line 7
 any lines
 path is successful
-any lines
-execute line 4
-resume line 13
-execute line 13
-save line 16
-execute line 14
-any lines
-path is successful
+
 any lines
 execute line 6
-resume line 9
+resume jump 9
 execute line 9
 any lines
 path is successful
+
 any lines
 execute line 13
-resume line 16
+resume next 14
+execute line 14
+any lines
+path is successful
+
+any lines
+execute line 13
+resume jump 16
 execute line 16
 any lines
 path is successful

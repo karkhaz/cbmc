@@ -7,16 +7,21 @@ SIGNAL=0
 --
 ^warning: ignoring
 --
+This tests that the next path is resumed before the jump path.
+
 Test that the following happens in order:
 execute line 4
-save line 7
+save next 5
+save jump 7
+any lines
+execute line 4
+resume next 5
 execute line 5
 any lines
 path is successful
 any lines
 execute line 4
-resume line 7
+resume jump 7
 execute line 7
 any lines
 path is successful
-end

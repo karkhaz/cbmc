@@ -8,43 +8,39 @@ SIGNAL=0
 ^warning: ignoring
 --
 Test that the following happens in order:
+save next 6
+save jump 8
+any lines
 execute line 4
-//
-// Save that the loop condition was never satisfied
-//
-save line 8
+resume next 6
+execute line 6
+
+// Now go back to the top of the loop
+any lines
+save next 6
+save jump 8
+
+// Before doing the instructions that assume we've already been through
+// the loop once, explore the path corresponding to never having been
+// through the loop
+any lines
+execute line 4
+resume jump 8
+any lines
+path is successful
+
+// Enter loop twice
+any lines
+execute line 4
+resume next 6
 execute line 6
 any lines
-execute line 4
-unwind
-//
-// Save that the loop condition was satisfied once but not twice
-//
-save line 8
-execute line 6
+path is successful
+
+// Bail out after having entered loop once
 any lines
-//
-// Escape the loop
-//
+execute line 4
+resume jump 8
 execute line 8
 any lines
 path is successful
-//
-// Now do the first break out of the loop...
-//
-any lines
-execute line 4
-resume line 8
-execute line 8
-any lines
-path is successful
-//
-// ...and the second.
-//
-any lines
-execute line 4
-resume line 8
-execute line 8
-any lines
-path is successful
-end

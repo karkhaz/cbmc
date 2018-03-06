@@ -7,25 +7,50 @@ EXIT=10
 --
 ^warning: ignoring
 --
-This tests the following:
-
-- Symex saves the path that traverses the loop once, then the path that
-  traverses the loop twice;
-
-- Symex pops the path that traverses the loop once, then the path that
-  traverses the loop twice.
-
-The path that traverses the loop twice is the one that would cause an
-assertion failure, thus that result must appear last rather than second
-last.
-
 Test that the following happens in order:
-// Loop 0 times
-path is successful
+execute line 6
+// Enter loop
+save next 7
+// Skip loop
+save jump 9
 any lines
-// Loop once
-path is successful
+execute line 6
+resume next 7
+execute line 7
 any lines
-// Loop twice
+// Enter loop twice
+save next 7
+// Enter loop once & bail
+save jump 9
+
+// From this point on, we start hitting the end of paths.
+
+// The path where we skipped over the loop completely. The path is
+// nonsense, because we assume x == 1 and yet do not enter the loop;
+// thus the path is infeasible and verification succeeds.
+any lines
+execute line 6
+resume jump 9
+execute line 9
+any lines
+path is successful
+
+// The path where we enter the loop twice and then hit the assertion.
+// The path is infeasible because we cannot execute the loop twice if x
+// started out as 1.
+any lines
+execute line 6
+resume next 7
+execute line 7
+any lines
+path is successful
+
+// The path where we enter the loop once and then bail out. Here, x has
+// been decremented to zero, so the assertion must fail.
+any lines
+execute line 6
+resume jump 9
+execute line 9
+any lines
 path is unsuccessful
 end

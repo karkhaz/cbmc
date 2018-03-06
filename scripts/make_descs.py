@@ -98,16 +98,28 @@ def interpret(command_list, in_file, offset):
                     % int(m.group("l")))
             continue
 
-        m = re.match(r"^save line (?P<l>\d+)$", line)
+        m = re.match(r"^save jump (?P<l>\d+)$", line)
         if m:
-            ret += ("Saving 'file[^\\n]+line %d function \\w+'\\n"
+            ret += ("Saving jump target 'file[^\\n]+line %d function \\w+'\\n"
                     % int(m.group("l")))
             continue
 
-        m = re.match(r"^resume line (?P<l>\d+)$", line)
+        m = re.match(r"^save next (?P<l>\d+)$", line)
         if m:
-            ret += ("Resuming from 'file[^\\n]+line %d function \\w+'\\n"
-                    % int(m.group("l")))
+            ret += ("Saving next instruction 'file[^\\n]+line %d function "
+                    "\\w+'\\n" % int(m.group("l")))
+            continue
+
+        m = re.match(r"^resume next (?P<l>\d+)$", line)
+        if m:
+            ret += ("Resuming from next instruction 'file[^\\n]+line %d "
+                    "function \\w+'\\n" % int(m.group("l")))
+            continue
+
+        m = re.match(r"^resume jump (?P<l>\d+)$", line)
+        if m:
+            ret += ("Resuming from jump target 'file[^\\n]+line %d function "
+                    "\\w+'\\n" % int(m.group("l")))
             continue
 
         m = re.match(r"^unwind$", line)
