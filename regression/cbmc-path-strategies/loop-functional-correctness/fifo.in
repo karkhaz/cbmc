@@ -1,6 +1,6 @@
 CORE
 main.c
---unwind 2 --paths
+--unwind 2 --paths fifo
 activate-multi-line-match
 SIGNAL=0
 EXIT=10

@@ -128,6 +128,7 @@ public:
   }
 
   static int do_language_agnostic_bmc(
+    const path_strategy_choosert &path_strategy_chooser,
     const optionst &opts,
     abstract_goto_modelt &goto_model,
     const ui_message_handlert::uit &ui,
@@ -306,7 +307,8 @@ private:
   "(no-unwinding-assertions)"                                                  \
   "(no-pretty-names)"                                                          \
   "(partial-loops)"                                                            \
-  "(paths)"                                                                    \
+  "(paths):"                                                                   \
+  "(show-symex-strategies)"                                                    \
   "(depth):"                                                                   \
   "(unwind):"                                                                  \
   "(unwindset):"                                                               \
@@ -314,7 +316,8 @@ private:
   "(unwindset):"
 
 #define HELP_BMC                                                               \
-  " --paths                      explore paths one at a time\n"                \
+  " --paths [strategy]           explore paths one at a time\n"                \
+  " --show-symex-strategies      list strategies for use with --paths\n"       \
   " --program-only               only show program expression\n"               \
   " --show-loops                 show the loops in the program\n"              \
   " --depth nr                   limit search depth\n"                         \

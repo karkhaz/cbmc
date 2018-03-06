@@ -1,6 +1,6 @@
 CORE
 main.c
---paths fifo
+--paths progressive-fifo
 activate-multi-line-match
 EXIT=0
 SIGNAL=0
@@ -14,24 +14,24 @@ save jump 13
 
 any lines
 execute line 4
-resume next 6
-execute line 6
-save next 7
-save jump 9
-
-any lines
-execute line 4
 resume jump 13
 execute line 13
 save next 14
 save jump 16
 
 any lines
-execute line 6
-resume next 7
-execute line 7
+execute line 13
+resume jump 16
+execute line 16
 any lines
 path is successful
+
+any lines
+execute line 4
+resume next 6
+execute line 6
+save next 7
+save jump 9
 
 any lines
 execute line 6
@@ -48,9 +48,9 @@ any lines
 path is successful
 
 any lines
-execute line 13
-resume jump 16
-execute line 16
+execute line 6
+resume next 7
+execute line 7
 any lines
 path is successful
 end

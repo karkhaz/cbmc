@@ -1,0 +1,47 @@
+CORE
+main.c
+--unwind 2 --paths progressive-fifo
+activate-multi-line-match
+EXIT=0
+SIGNAL=0
+--
+^warning: ignoring
+--
+Test that the following happens in order:
+execute line 4
+save next 6
+save jump 8
+
+// Bail out without having entered loop, ever
+any lines
+execute line 4
+resume jump 8
+execute line 8
+any lines
+path is successful
+
+// Enter loop body for the first time
+any lines
+execute line 4
+resume next 6
+execute line 6
+any lines
+save next 6
+save jump 8
+
+// Bail out after executing loop once
+any lines
+execute line 4
+resume jump 8
+execute line 8
+any lines
+path is successful
+
+// Execute loop for the second time
+any lines
+execute line 4
+resume next 6
+execute line 6
+any lines
+path is successful
+end

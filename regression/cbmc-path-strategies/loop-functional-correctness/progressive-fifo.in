@@ -1,0 +1,56 @@
+CORE
+main.c
+--unwind 2 --paths progressive-fifo
+activate-multi-line-match
+SIGNAL=0
+EXIT=10
+--
+^warning: ignoring
+--
+This strategy differs from 'fifo' because the failed path is the second
+one, not the last one.
+
+Test that the following happens in order:
+execute line 6
+save next 7
+save jump 9
+
+// We skip the loop first with this strategy. This path is infeasible,
+// since x is 1 so we must have entered the loop; so the solver is happy.
+any lines
+execute line 6
+resume jump 9
+execute line 9
+any lines
+path is successful
+
+// We now enter the loop and execute it; we then save "entering the loop
+// twice" and "bailing out after the first spin".
+any lines
+execute line 6
+resume next 7
+execute line 7
+any lines
+save next 7
+save jump 9
+
+// Since the just saved "bailing out after the first spin" is a jump,
+// execute that path. That path makes the assertion fail, since we
+// decremented x from 1 to 0.
+any lines
+execute line 6
+resume jump 9
+execute line 9
+any lines
+path is unsuccessful
+
+// Finally, execute "entering the loop twice". This path is infeasible
+// because we cannot actually have entered the loop twice if x was only
+// 1 to begin with, so the solver is happy.
+any lines
+execute line 6
+resume next 7
+execute line 7
+any lines
+path is successful
+end

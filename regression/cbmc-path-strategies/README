@@ -1,0 +1,18 @@
+                        PATH EXPLORATION TESTS
+                        ======================
+
+This directory contains tests for the different path exploration
+strategies when using cbmc's `--paths` flag. Every directory contains a
+program whose paths will be explored in a different order by the
+different strategies, and a series of tests---one test for each
+strategy. The tests check that the paths of the program are explored in
+the correct order for each strategy.
+
+If you write a new strategy (invoked through `cbmc --paths my-strategy`),
+you should write a `my-strategy.in` file in each subdirectory of
+cbmc-path-strategies. The my-strategy.in file should contain the order
+you expect to see the paths being explored for the main.c file in that
+directory.
+
+The test description files, my-strategy.desc, are generated from the .in
+files using the script scripts/gen_descs.py.
