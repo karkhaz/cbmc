@@ -8,6 +8,8 @@
 #include "goto_symex_state.h"
 #include "symex_target_equation.h"
 
+#include <goto-programs/goto_model.h>
+
 #include <util/options.h>
 #include <util/cmdline.h>
 #include <util/ui_message.h>
@@ -43,6 +45,10 @@ public:
 
   virtual ~path_storaget() = default;
 
+  path_storaget(const abstract_goto_modelt &model) : model(model)
+  {
+  }
+
   /// \brief Reference to the next path to resume
   patht &peek()
   {
@@ -77,6 +83,9 @@ public:
     return size() == 0;
   };
 
+protected:
+  const abstract_goto_modelt &model;
+
 private:
   // Derived classes should override these methods, allowing the base class to
   // enforce preconditions.
@@ -88,6 +97,10 @@ private:
 class path_fifot : public path_storaget
 {
 public:
+  path_fifot(const abstract_goto_modelt &model) : path_storaget(model)
+  {
+  }
+
   void push(const patht &, const patht &) override;
   std::size_t size() const override;
 
@@ -103,6 +116,11 @@ private:
 class progressive_path_fifot : public path_storaget
 {
 public:
+  progressive_path_fifot(const abstract_goto_modelt &model)
+    : path_storaget(model)
+  {
+  }
+
   void push(const patht &, const patht &) override;
   std::size_t size() const override;
 
@@ -140,12 +158,13 @@ public:
   ///
   /// Ensure that path_strategy_choosert::is_valid_strategy() returns true for a
   /// particular string before calling this function on that string.
-  std::unique_ptr<path_storaget> get(const std::string strategy) const
+  std::unique_ptr<path_storaget>
+  get(const std::string strategy, const abstract_goto_modelt &model) const
   {
     auto found = strategies.find(strategy);
     INVARIANT(
       found != strategies.end(), "Unknown strategy '" + strategy + "'.");
-    return found->second.second();
+    return found->second.second(model);
   }
 
   /// \brief add `paths` and `exploration-strategy` option, suitable to be
@@ -164,8 +183,41 @@ protected:
   /// a derived class of path_storaget that implements that strategy.
   std::map<const std::string,
            std::pair<const std::string,
-                     const std::function<std::unique_ptr<path_storaget>()>>>
+                     const std::function<std::unique_ptr<path_storaget>(
+                       const abstract_goto_modelt &)>>>
     strategies;
+};
+
+/// \brief Unusable path storage, for clients who don't intend to use it
+///
+/// This class is intended for clients who don't have a \ref
+/// abstract_goto_modelt to initialize a real path_storaget with, and
+/// thus cannot call path_strategy_choosert::get().
+class degenerate_path_storaget : public path_storaget
+{
+public:
+  degenerate_path_storaget() : path_storaget(model)
+  {
+  }
+  void push(const patht &, const patht &) override
+  {
+    INVARIANT(false, "Cannot push onto degenerate path storage");
+  }
+  std::size_t size() const override
+  {
+    INVARIANT(false, "Cannot take size of degenerate path storage");
+  }
+
+private:
+  goto_modelt model;
+  patht &private_peek() override
+  {
+    INVARIANT(false, "Cannot peek at degenerate path storage");
+  }
+  void private_pop() override
+  {
+    INVARIANT(false, "Cannot pop degenerate path storage");
+  }
 };
 
 #endif /* CPROVER_GOTO_SYMEX_PATH_STORAGE_H */

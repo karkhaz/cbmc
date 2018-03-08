@@ -10,6 +10,8 @@ Author: Kareem Khazem <karkhaz@karkhaz.com>
 
 #include <sstream>
 
+#include <goto-programs/goto_model.h>
+
 #include <util/exit_codes.h>
 
 path_storaget::patht &path_fifot::private_peek()
@@ -128,16 +130,16 @@ path_strategy_choosert::path_strategy_choosert()
         {" fifo                         next instruction is pushed before\n"
          "                              goto target; paths are popped in\n"
          "                              first-in, first-out order\n",
-         []() { // NOLINT(whitespace/braces)
-           return std::unique_ptr<path_fifot>(new path_fifot());
+         [](const abstract_goto_modelt &mod) { // NOLINT(whitespace/braces)
+           return std::unique_ptr<path_fifot>(new path_fifot(mod));
          }}},
        {"progressive-fifo",
         {" progressive-fifo             prefer to make progress: all goto\n"
          "                              targets are popped in fifo order,\n"
          "                              followed by all next instructions\n",
-         []() { // NOLINT(whitespace/braces)
+         [](const abstract_goto_modelt &mod) { // NOLINT(whitespace/braces)
            return std::unique_ptr<progressive_path_fifot>(
-             new progressive_path_fifot());
+             new progressive_path_fifot(mod));
          }}}})
 {
 }
