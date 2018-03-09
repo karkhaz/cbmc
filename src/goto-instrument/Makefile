@@ -37,7 +37,6 @@ SRC = accelerate/accelerate.cpp \
       goto_instrument_languages.cpp \
       goto_instrument_main.cpp \
       goto_instrument_parse_options.cpp \
-      goto_program2code.cpp \
       havoc_loops.cpp \
       horn_encoding.cpp \
       interrupt.cpp \

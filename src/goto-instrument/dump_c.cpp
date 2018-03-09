@@ -26,7 +26,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <ansi-c/ansi_c_language.h>
 #include <cpp/cpp_language.h>
 
-#include "goto_program2code.h"
+#include <goto-programs/goto_program2code.h>
 #include "dump_c_class.h"
 
 inline std::ostream &operator << (std::ostream &out, dump_ct &src)
