@@ -9,8 +9,11 @@ Author: Daniel Kroening, kroening@kroening.com
 #include "source_location.h"
 
 #include <ostream>
+#include <cstring>
 
 #include "file_util.h"
+
+#include <util/string2int.h>
 
 /// \par parameters: print_cwd, print the absolute path to the file
 std::string source_locationt::as_string(bool print_cwd) const
@@ -79,4 +82,22 @@ std::ostream &operator << (
     return out;
   out << source_location.as_string();
   return out;
+}
+
+bool source_locationt::operator<(const source_locationt &another) const
+{
+  if(std::strcmp(this->get_file().c_str(), another.get_file().c_str()) < 0)
+    return true;
+  if(std::strcmp(this->get_file().c_str(), another.get_file().c_str()) > 0)
+    return false;
+  if(unsafe_string2unsigned(this->get_line().c_str()) <
+     unsafe_string2unsigned(another.get_line().c_str()))
+    return true;
+  if(unsafe_string2unsigned(this->get_line().c_str()) >
+     unsafe_string2unsigned(another.get_line().c_str()))
+    return false;
+  if(unsafe_string2unsigned(this->get_column().c_str()) <
+     unsafe_string2unsigned(another.get_column().c_str()))
+    return true;
+  return false;
 }

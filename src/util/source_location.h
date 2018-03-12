@@ -182,6 +182,8 @@ public:
     return static_cast<const source_locationt &>(get_nil_irep());
   }
 
+  bool operator<(const source_locationt &other) const;
+
 protected:
   std::string as_string(bool print_cwd) const;
 };
