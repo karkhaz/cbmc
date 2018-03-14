@@ -237,6 +237,18 @@ int goto_instrument_parse_optionst::doit()
       }
     }
 
+    if(cmdline.isset("show-blocks"))
+    {
+      transitive_blockst::show_blocks(goto_model, *this);
+      return CPROVER_EXIT_SUCCESS;
+    }
+
+    if(cmdline.isset("show-transitive-blocks"))
+    {
+      transitive_blockst::show_transitive_blocks(goto_model, *this);
+      return CPROVER_EXIT_SUCCESS;
+    }
+
     if(cmdline.isset("show-threaded"))
     {
       namespacet ns(goto_model.symbol_table);
@@ -1576,6 +1588,7 @@ void goto_instrument_parse_optionst::help()
     " --xml-ui                     use XML-formatted output\n"
     " --json-ui                    use JSON-formatted output\n"
     HELP_TIMESTAMP
+    HELP_TRANSITIVE_BLOCKS
     "\n";
   // clang-format on
 }

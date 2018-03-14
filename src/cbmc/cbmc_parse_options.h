@@ -21,6 +21,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <analyses/goto_check.h>
 
 #include <goto-programs/goto_trace.h>
+#include <goto-programs/transitive_blocks.h>
 
 #include "bmc.h"
 #include "xml_interface.h"
@@ -35,6 +36,7 @@ class optionst;
   OPT_BMC \
   "(preprocess)(slice-by-trace):" \
   OPT_FUNCTIONS \
+  OPT_TRANSITIVE_BLOCKS \
   "(no-simplify)(full-slice)" \
   OPT_REACHABILITY_SLICER \
   "(debug-level):(no-propagation)(no-simplify-if)" \

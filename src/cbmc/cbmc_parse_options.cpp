@@ -539,6 +539,18 @@ int cbmc_parse_optionst::doit()
   if(get_goto_program_ret!=-1)
     return get_goto_program_ret;
 
+  if(cmdline.isset("show-blocks"))
+  {
+    transitive_blockst::show_blocks(goto_model, *this);
+    return CPROVER_EXIT_SUCCESS;
+  }
+
+  if(cmdline.isset("show-transitive-blocks"))
+  {
+    transitive_blockst::show_transitive_blocks(goto_model, *this);
+    return CPROVER_EXIT_SUCCESS;
+  }
+
   if(cmdline.isset("show-claims") || // will go away
      cmdline.isset("show-properties")) // use this one
   {
@@ -1003,6 +1015,7 @@ void cbmc_parse_optionst::help()
     HELP_GOTO_TRACE
     " --verbosity #                verbosity level\n"
     HELP_TIMESTAMP
+    HELP_TRANSITIVE_BLOCKS
     "\n";
   // clang-format on
 }

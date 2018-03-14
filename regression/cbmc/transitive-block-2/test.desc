@@ -1,0 +1,42 @@
+CORE
+main.c
+--show-transitive-blocks
+^EXIT=0$
+^SIGNAL=0$
+.+line 3.+-> .+line 3
+.+line 8.+-> .+line 3
+.+line 8.+-> .+line 4
+.+line 8.+-> .+line 8
+.+line 8.+-> .+line 9
+.+line 9.+-> .+line 3
+.+line 9.+-> .+line 4
+.+line 9.+-> .+line 9
+.+line 12.+->.+line 3
+.+line 12.+->.+line 4
+.+line 12.+->.+line 8
+.+line 12.+->.+line 9
+.+line 12.+->.+line 10
+.+line 12.+->.+line 12
+.+line 12.+->.+line 14
+.+line 12.+->.+line 15
+.+line 12.+->.+line 16
+.+line 14.+->.+line 3
+.+line 14.+->.+line 4
+.+line 14.+->.+line 8
+.+line 14.+->.+line 9
+.+line 14.+->.+line 10
+.+line 14.+->.+line 14
+.+line 14.+->.+line 15
+.+line 15.+->.+line 3
+.+line 15.+->.+line 4
+.+line 15.+->.+line 8
+.+line 15.+->.+line 9
+.+line 15.+->.+line 10
+.+line 15.+->.+line 15
+--
+.+line 15.+->.+line 14
+.+line 9.+->.+line 14
+.+line 9.+->.+line 8
+.+line 3.+->.+line 8
+.+line 3.+->.+line 9
+^warning: ignoring

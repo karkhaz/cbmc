@@ -21,6 +21,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <goto-programs/show_properties.h>
 #include <goto-programs/remove_calls_no_body.h>
 #include <goto-programs/remove_const_function_pointers.h>
+#include <goto-programs/transitive_blocks.h>
 
 #include <analyses/goto_check.h>
 
@@ -32,6 +33,7 @@ Author: Daniel Kroening, kroening@kroening.com
   "(dump-c)(dump-cpp)(no-system-headers)(use-all-headers)(dot)(xml)" \
   "(harness)" \
   OPT_GOTO_CHECK \
+  OPT_TRANSITIVE_BLOCKS \
   /* no-X-check are deprecated and ignored */ \
   "(no-bounds-check)(no-pointer-check)(no-div-by-zero-check)" \
   "(no-nan-check)" \

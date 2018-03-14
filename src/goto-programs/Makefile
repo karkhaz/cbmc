@@ -19,6 +19,7 @@ SRC = basic_blocks.cpp \
       goto_inline.cpp \
       goto_inline_class.cpp \
       goto_program.cpp \
+      goto_program2code.cpp \
       goto_program_irep.cpp \
       goto_program_template.cpp \
       goto_trace.cpp \
@@ -65,6 +66,7 @@ SRC = basic_blocks.cpp \
       string_abstraction.cpp \
       string_instrumentation.cpp \
       system_library_symbols.cpp \
+      transitive_blocks.cpp \
       vcd_goto_trace.cpp \
       wp.cpp \
       write_goto_binary.cpp \
