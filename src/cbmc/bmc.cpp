@@ -648,7 +648,7 @@ int bmct::do_language_agnostic_bmc(
   INVARIANT(
     path_strategy_chooser.is_valid_strategy(strategy),
     "Front-end passed us invalid path strategy '" + strategy + "'");
-  worklist = path_strategy_chooser.get(strategy, model);
+  worklist = path_strategy_chooser.get(strategy, model, message);
   try
   {
     {

@@ -10,12 +10,13 @@ Author: Kareem Khazem <karkhaz@karkhaz.com>
 
 #include "goto_program2code.h"
 
-transitive_blockst::transitive_blockst(const goto_modelt &gm) : goto_model(gm)
+transitive_blockst::transitive_blockst(const abstract_goto_modelt &model)
+  : model(model)
 {
   transitive_blockst::funs2linest funs2lines;
   compute_transitive_function_lines(funs2lines);
 
-  for(const auto &pair : goto_model.goto_functions.function_map)
+  for(const auto &pair : model.get_goto_functions().function_map)
     compute_blocks(pair.first, pair.second.body, funs2lines);
 }
 
@@ -25,7 +26,7 @@ void transitive_blockst::compute_blocks(
   const funs2linest &funs2lines)
 {
   code_blockt block;
-  symbol_tablet st_copy(goto_model.symbol_table);
+  symbol_tablet st_copy(model.get_symbol_table());
   std::list<irep_idt> local_static, type_names;
   const std::unordered_set<irep_idt, irep_id_hash> typedef_names;
   std::set<std::string> system_headers;
@@ -154,13 +155,13 @@ void transitive_blockst::compute_transitive_function_lines(
 {
   std::unordered_map<irep_idt, std::set<source_locationt>, irep_id_hash>
     original_lines;
-  forall_goto_functions(f_it, goto_model.goto_functions)
+  forall_goto_functions(f_it, model.get_goto_functions())
   {
     std::set<source_locationt> &line_set = original_lines[f_it->first];
     forall_goto_program_instructions(it, f_it->second.body)
       line_set.insert(it->source_location);
   }
-  forall_goto_functions(f_it, goto_model.goto_functions)
+  forall_goto_functions(f_it, model.get_goto_functions())
   {
     std::list<irep_idt> worklist = {f_it->first};
     transitive_function_lines[f_it->first].insert(
@@ -172,9 +173,9 @@ void transitive_blockst::compute_transitive_function_lines(
       if(fun_name.empty())
         continue;
       const auto explore_it =
-        goto_model.goto_functions.function_map.find(fun_name);
+        model.get_goto_functions().function_map.find(fun_name);
       INVARIANT(
-        explore_it != goto_model.goto_functions.function_map.end(),
+        explore_it != model.get_goto_functions().function_map.end(),
         "Could not find function '" + std::string(fun_name.c_str()) +
           "' in function map");
       forall_goto_program_instructions(it, explore_it->second.body)
@@ -227,13 +228,13 @@ bool transitive_blockst::location_of(
 }
 
 void transitive_blockst::show_blocks(
-  const goto_modelt &goto_model,
+  const abstract_goto_modelt &model,
   messaget &message)
 {
-  for(const auto &pair : goto_model.goto_functions.function_map)
+  for(const auto &pair : model.get_goto_functions().function_map)
   {
     code_blockt block;
-    symbol_tablet st_copy(goto_model.symbol_table);
+    symbol_tablet st_copy(model.get_symbol_table());
     std::list<irep_idt> local_static, type_names;
     const std::unordered_set<irep_idt, irep_id_hash> typedef_names;
     std::set<std::string> system_headers;
@@ -252,11 +253,11 @@ void transitive_blockst::show_blocks(
 }
 
 void transitive_blockst::show_transitive_blocks(
-  const goto_modelt &goto_model,
+  const abstract_goto_modelt &model,
   messaget &message)
 {
   transitive_blockst::transitive_linest transitive_lines;
-  transitive_blockst blocks(goto_model);
+  transitive_blockst blocks(model);
   for(const auto &pair : blocks.line_map)
   {
     if(pair.first.is_nil())

@@ -9,6 +9,7 @@
 #include "symex_target_equation.h"
 
 #include <goto-programs/goto_model.h>
+#include <goto-programs/transitive_blocks.h>
 
 #include <util/options.h>
 #include <util/cmdline.h>
@@ -45,8 +46,35 @@ public:
 
   virtual ~path_storaget() = default;
 
-  path_storaget(const abstract_goto_modelt &model) : model(model)
+  path_storaget(const abstract_goto_modelt &model, messaget &message)
+    : model(model), log(message)
   {
+  }
+
+  /// \brief Notify this path_storaget that an instruction will be executed
+  ///
+  /// This implementation is empty, but derived types may override it to
+  /// indicate that they wish to be informed that symex has just executed an
+  /// instruction.  This can be used to update their path selection strategy.
+  ///
+  /// Note that if derived types override this method, they should also override
+  /// path_storaget::needs_notify() to return `true`. This is so that symex can
+  /// avoid making a function call on every instruction if the method is empty.
+  virtual void notify_executing(const goto_programt::instructiont &instruction)
+  {
+  }
+
+  /// \brief Does this path_storaget need to be notified when an instruction is
+  /// executed?
+  ///
+  /// Derived types of this class can override this method to indicate that they
+  /// require the symbolic executor to notify them every time an instruction is
+  /// executed. If this method returns `false` (as this implementation does),
+  /// the symbolic executor is free to avoid calling
+  /// path_storaget::notify_executed().
+  virtual bool needs_notifying() const
+  {
+    return false;
   }
 
   /// \brief Reference to the next path to resume
@@ -85,6 +113,7 @@ public:
 
 protected:
   const abstract_goto_modelt &model;
+  messaget &log;
 
 private:
   // Derived classes should override these methods, allowing the base class to
@@ -97,7 +126,8 @@ private:
 class path_fifot : public path_storaget
 {
 public:
-  path_fifot(const abstract_goto_modelt &model) : path_storaget(model)
+  path_fifot(const abstract_goto_modelt &model, messaget &message)
+    : path_storaget(model, message)
   {
   }
 
@@ -116,8 +146,9 @@ private:
 class progressive_path_fifot : public path_storaget
 {
 public:
-  progressive_path_fifot(const abstract_goto_modelt &model)
-    : path_storaget(model)
+  progressive_path_fifot(
+    const abstract_goto_modelt &model, messaget &message)
+    : path_storaget(model, message)
   {
   }
 
@@ -133,6 +164,41 @@ protected:
   /// path we should pop. This is the case _even if_ a path was added to the
   /// jump queue in the mean time.
   bool pop_next;
+
+private:
+  patht &private_peek() override;
+  void private_pop() override;
+};
+
+/// \brief Prefer paths that will visit lines of code that we've never seen
+class high_coverage_path_storaget : public path_storaget
+{
+public:
+  high_coverage_path_storaget(const abstract_goto_modelt &, messaget &);
+
+  void push(const patht &, const patht &) override;
+  std::size_t size() const override;
+
+protected:
+  transitive_blockst transitive_blocks;
+  std::list<path_storaget::patht> paths;
+
+  typedef std::list<path_storaget::patht>::iterator paths_it;
+  /// What's the last path we peeked at?
+  paths_it last_peeked;
+
+  /// How many times we have symexed a location
+  std::map<source_locationt, unsigned> frequency;
+
+  std::set<source_locationt> all_sloc;
+
+  bool needs_notifying() const override
+  {
+    return true;
+  }
+
+  void
+  notify_executing(const goto_programt::instructiont &instruction) override;
 
 private:
   patht &private_peek() override;
@@ -158,13 +224,15 @@ public:
   ///
   /// Ensure that path_strategy_choosert::is_valid_strategy() returns true for a
   /// particular string before calling this function on that string.
-  std::unique_ptr<path_storaget>
-  get(const std::string strategy, const abstract_goto_modelt &model) const
+  std::unique_ptr<path_storaget> get(
+    const std::string strategy,
+    const abstract_goto_modelt &model,
+    messaget &message) const
   {
     auto found = strategies.find(strategy);
     INVARIANT(
       found != strategies.end(), "Unknown strategy '" + strategy + "'.");
-    return found->second.second(model);
+    return found->second.second(model, message);
   }
 
   /// \brief add `paths` and `exploration-strategy` option, suitable to be
@@ -184,7 +252,7 @@ protected:
   std::map<const std::string,
            std::pair<const std::string,
                      const std::function<std::unique_ptr<path_storaget>(
-                       const abstract_goto_modelt &)>>>
+                       const abstract_goto_modelt &, messaget &)>>>
     strategies;
 };
 
@@ -196,7 +264,7 @@ protected:
 class degenerate_path_storaget : public path_storaget
 {
 public:
-  degenerate_path_storaget() : path_storaget(model)
+  degenerate_path_storaget() : path_storaget(model, message)
   {
   }
   void push(const patht &, const patht &) override
@@ -210,6 +278,7 @@ public:
 
 private:
   goto_modelt model;
+  messaget message;
   patht &private_peek() override
   {
     INVARIANT(false, "Cannot peek at degenerate path storage");

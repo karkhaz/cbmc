@@ -25,7 +25,7 @@
 class transitive_blockst
 {
 public:
-  explicit transitive_blockst(const goto_modelt &);
+  explicit transitive_blockst(const abstract_goto_modelt &);
 
   typedef std::map<source_locationt, std::set<source_locationt>>
     transitive_linest;
@@ -36,10 +36,10 @@ public:
   transitive_linest line_map;
 
   /// \brief Print code blocks, suitable for invocation from frontend
-  static void show_blocks(const goto_modelt &, messaget &);
+  static void show_blocks(const abstract_goto_modelt &, messaget &);
 
   /// \brief Print transitive line reach, suitable for invocation from frontend
-  static void show_transitive_blocks(const goto_modelt &, messaget &);
+  static void show_transitive_blocks(const abstract_goto_modelt &, messaget &);
 
 protected:
   /// \brief Map from function names to lines statically reachable
@@ -76,7 +76,7 @@ protected:
     const funs2linest &funs2lines,
     std::set<source_locationt> &my_locations);
 
-  const goto_modelt &goto_model;
+  const abstract_goto_modelt &model;
 };
 
 #define OPT_TRANSITIVE_BLOCKS "(show-transitive-blocks)(show-blocks)"

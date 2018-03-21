@@ -64,7 +64,8 @@ public:
       atomic_section_counter(0),
       log(mh),
       guard_identifier("goto_symex::\\guard"),
-      path_storage(path_storage)
+      path_storage(path_storage),
+      notify_path_storage(path_storage.needs_notifying())
   {
     options.set_option("simplify", true);
     options.set_option("assertions", true);
@@ -455,6 +456,9 @@ protected:
   void rewrite_quantifiers(exprt &, statet &);
 
   path_storaget &path_storage;
+
+  /// Should we notify path_storage every time we execute an instruction?
+  const bool notify_path_storage;
 };
 
 #endif // CPROVER_GOTO_SYMEX_GOTO_SYMEX_H

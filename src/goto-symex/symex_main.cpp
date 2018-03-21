@@ -315,6 +315,9 @@ void goto_symext::symex_step(
   if(!options.get_bool_option("paths"))
     merge_gotos(state);
 
+  if(notify_path_storage)
+    path_storage.notify_executing(instruction);
+
   // depth exceeded?
   {
     unsigned max_depth=options.get_unsigned_int_option("depth");
