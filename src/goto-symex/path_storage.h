@@ -77,6 +77,9 @@ public:
     return false;
   }
 
+  /// \brief how many paths starting with each source location have we saved?
+  virtual void get_location_map(std::map<source_locationt, unsigned> &) = 0;
+
   /// \brief Reference to the next path to resume
   patht &peek()
   {
@@ -122,10 +125,95 @@ private:
   virtual void private_pop() = 0;
 };
 
+/// \brief Depth-first path exploration with function penalty
+///
+/// This class adds a penalty to a function every time we resume execution from
+/// there, in order to try resuming from a variety of locations. Function
+/// penalties being equal, it does depth first search.
+class path_lifo_function_penaltyt : public path_storaget
+{
+public:
+  path_lifo_function_penaltyt(
+    const abstract_goto_modelt &model, messaget &message)
+    : path_storaget(model, message)
+  {
+  }
+
+  void get_location_map(std::map<source_locationt, unsigned> &map) override;
+
+  void push(const patht &, const patht &) override;
+  std::size_t size() const override;
+
+protected:
+  std::list<patht> paths;
+  std::map<const irep_idt, unsigned> penalties;
+  typedef std::list<path_storaget::patht>::iterator paths_it;
+  paths_it last_peeked;
+
+private:
+  patht &private_peek() override;
+  void private_pop() override;
+};
+
+/// \brief Depth-first path exploration with location penalty
+///
+/// This class adds a penalty to a location every time we resume execution from
+/// there, in order to try resuming from a variety of locations. Location
+/// penalties being equal, it does depth first search.
+class path_lifo_location_penaltyt : public path_storaget
+{
+public:
+  path_lifo_location_penaltyt(
+    const abstract_goto_modelt &model, messaget &message)
+    : path_storaget(model, message)
+  {
+  }
+
+  void get_location_map(std::map<source_locationt, unsigned> &map) override;
+
+  void push(const patht &, const patht &) override;
+  std::size_t size() const override;
+
+protected:
+  std::list<patht> paths;
+  std::map<const source_locationt, unsigned> penalties;
+  typedef std::list<path_storaget::patht>::iterator paths_it;
+  paths_it last_peeked;
+
+private:
+  patht &private_peek() override;
+  void private_pop() override;
+};
+
+/// \brief Depth-first path exploration
+class path_lifot : public path_storaget
+{
+public:
+  path_lifot(const abstract_goto_modelt &model, messaget &message)
+    : path_storaget(model, message)
+  {
+  }
+
+  void get_location_map(std::map<source_locationt, unsigned> &map) override;
+
+  void push(const patht &, const patht &) override;
+  std::size_t size() const override;
+
+protected:
+  std::list<patht> paths;
+  typedef std::list<path_storaget::patht>::iterator paths_it;
+  paths_it last_peeked;
+
+private:
+  patht &private_peek() override;
+  void private_pop() override;
+};
+
 /// \brief FIFO save queue: paths are resumed in the order that they were saved
 class path_fifot : public path_storaget
 {
 public:
+  void get_location_map(std::map<source_locationt, unsigned> &map) override;
   path_fifot(const abstract_goto_modelt &model, messaget &message)
     : path_storaget(model, message)
   {
@@ -146,6 +234,7 @@ private:
 class progressive_path_fifot : public path_storaget
 {
 public:
+  void get_location_map(std::map<source_locationt, unsigned> &map) override;
   progressive_path_fifot(
     const abstract_goto_modelt &model, messaget &message)
     : path_storaget(model, message)
@@ -174,6 +263,7 @@ private:
 class high_coverage_path_storaget : public path_storaget
 {
 public:
+  void get_location_map(std::map<source_locationt, unsigned> &map) override;
   high_coverage_path_storaget(const abstract_goto_modelt &, messaget &);
 
   void push(const patht &, const patht &) override;
@@ -274,6 +364,10 @@ public:
   std::size_t size() const override
   {
     INVARIANT(false, "Cannot take size of degenerate path storage");
+  }
+
+  void get_location_map(std::map<source_locationt, unsigned> &map) override
+  {
   }
 
 private:

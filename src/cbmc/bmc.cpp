@@ -689,10 +689,25 @@ int bmct::do_language_agnostic_bmc(
     while(!worklist->empty())
     {
       if(tmp_result != safety_checkert::resultt::PAUSED)
+      {
         message.status() << "___________________________\n"
                          << "Starting new path (" << worklist->size()
                          << " to go)\n"
                          << message.eom;
+        std::map<source_locationt, unsigned> freqs;
+        worklist->get_location_map(freqs);
+        std::list<std::pair<source_locationt, unsigned>> freq_list;
+        for(const auto &pair : freqs)
+          freq_list.push_back(pair);
+        freq_list.sort([](
+          const std::pair<source_locationt, unsigned> &a,
+          const std::pair<source_locationt, unsigned> &b)
+          { return a.second > b.second; });
+        message.debug() << "FREQUENCIES\n";
+        for(const auto &pair : freq_list)
+          message.debug() << pair.first << " " << pair.second << "\n";
+        message.debug() << "END FREQUENCIES" << eom;
+      }
       cbmc_solverst solvers(opts, symbol_table, message.get_message_handler());
       solvers.set_ui(ui);
       std::unique_ptr<cbmc_solverst::solvert> cbmc_solver;
