@@ -56,12 +56,13 @@ public:
   /// history.
   struct strategy_contextt
   {
-    explicit strategy_contextt(messaget &log)
-      : log(log)
+    strategy_contextt(messaget &log, const optionst &options)
+      : log(log), options(options)
     {
     }
 
     messaget &log;
+    const optionst &options;
   };
 
   explicit path_storaget(const strategy_contextt &ctx)

@@ -43,9 +43,9 @@ public:
       ns(symbol_table, symex_symbol_table),
       equation(),
       log(mh),
-      strategy_context(log),
-      path_storage(strategy_context),
       options(),
+      strategy_context(log, options),
+      path_storage(strategy_context),
       symex(mh, symbol_table, equation, options, path_storage),
       satcheck(util_make_unique<satcheckt>()),
       satchecker(ns, *satcheck),
@@ -86,9 +86,9 @@ protected:
   namespacet ns;
   symex_target_equationt equation;
   messaget log;
+  optionst options;
   const path_storaget::strategy_contextt strategy_context;
   degenerate_path_storaget path_storage;
-  optionst options;
   goto_symext symex;
 
   std::unique_ptr<propt> satcheck;
