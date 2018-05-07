@@ -56,7 +56,12 @@ public:
   /// history.
   struct strategy_contextt
   {
-    // Empty for now
+    explicit strategy_contextt(messaget &log)
+      : log(log)
+    {
+    }
+
+    messaget &log;
   };
 
   explicit path_storaget(const strategy_contextt &ctx)
