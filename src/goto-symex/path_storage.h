@@ -20,8 +20,7 @@ class goto_symext;
 /// \brief Storage for symbolic execution paths to be resumed later
 ///
 /// This data structure supports saving partially-executed symbolic
-/// execution \ref path_storaget::patht "paths" so that their execution can
-/// be halted and resumed later. The choice of which path should be
+/// execution \ref path_storaget::patht "paths" so that their execution can /// be halted and resumed later. The choice of which path should be
 /// resumed next is implemented by subtypes of this abstract class.
 class path_storaget
 {
@@ -119,6 +118,27 @@ public:
     return size() == 0;
   };
 
+  /// \brief Callback for clients to notify this path_storaget that we have
+  /// symbolically executed to the end of a path, and the path has been
+  /// model-checked.
+  ///
+  /// This implementation does nothing. There is no need for clients to call
+  /// this method if path_storaget::interested_in_path_termination() returns
+  /// `false`.
+  virtual void notify_path_terminated()
+  {
+  }
+
+  /// \brief Is this path_storaget interested in path termination?
+  ///
+  /// If this method returns `true`, clients should call the
+  /// path_storaget::notify_path_terminated() method whenever the client
+  /// finishes symbolically executing a path.
+  virtual bool interested_in_path_termination() const
+  {
+    return false;
+  }
+
 protected:
   const strategy_contextt &context;
 
@@ -164,6 +184,41 @@ public:
 
 protected:
   std::list<patht> paths;
+
+private:
+  patht &private_peek() override;
+  void private_pop() override;
+};
+
+/// \brief Hybrid breadth-then-depth search
+class breadth_depth_path_storaget : public path_storaget
+{
+public:
+  void push(const patht &, const patht &) override;
+  std::size_t size() const override;
+  explicit breadth_depth_path_storaget(const strategy_contextt &ctx)
+  : path_storaget(ctx),
+    diameter(
+      ctx.options.is_set("bdfs-diameter")
+        ? ctx.options.get_unsigned_int_option("bdfs-diameter")
+        : 8U),
+    depth_list(),
+    current_depth_queue(depth_list.end())
+  {
+  }
+
+  virtual void notify_path_terminated() override;
+  virtual bool interested_in_path_termination() const override
+  {
+    return true;
+  }
+
+protected:
+  const unsigned diameter;
+  std::list<patht> breadth_list;
+  std::list<std::list<patht>> depth_list;
+  std::list<std::list<patht>>::iterator current_depth_queue;
+  std::list<patht>::iterator last_peeked;
 
 private:
   patht &private_peek() override;

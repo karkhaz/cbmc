@@ -651,6 +651,9 @@ int bmct::do_language_agnostic_bmc(
         worklist->notify_path_completion();
       }
       worklist->pop();
+      if(tmp_result != safety_checkert::resultt::PAUSED)
+        if(worklist->interested_in_path_termination())
+          worklist->notify_path_terminated();
     }
   }
   catch(const char *error_msg)
