@@ -262,6 +262,73 @@ SCENARIO("path strategies")
          symex_eventt::result(symex_eventt::enumt::FAILURE)});
     }
   }
+
+  GIVEN("a very branchy program for testing hybrid strategy")
+  {
+    std::function<void(optionst &)> opts_callback;
+
+    c =
+      "/*  1 */  void foo(int bar)    \n"
+      "/*  2 */  {                    \n"
+      "/*  1 */    if(!bar)           \n"
+      "/*  2 */      return;          \n"
+      "/*  3 */                       \n"
+      "/*  4 */    int x;             \n"
+      "/*  5 */    if(x)              \n"
+      "/*  6 */      foo(bar - 1);    \n"
+      "/*  7 */    else               \n"
+      "/*  9 */      foo(bar - 1);    \n"
+      "/* 10 */  }                    \n"
+      "/* 11 */                       \n"
+      "/* 12 */  int main()           \n"
+      "/* 13 */  {                    \n"
+      "/* 14 */    foo(8);            \n"
+      "/* 15 */  }                    \n";
+
+    const symex_eventt::listt dfs_order =
+      {symex_eventt::resume(symex_eventt::enumt::NEXT, 8),
+       symex_eventt::resume(symex_eventt::enumt::JUMP, 10),
+       symex_eventt::resume(symex_eventt::enumt::NEXT, 8),
+       symex_eventt::resume(symex_eventt::enumt::JUMP, 10),
+       symex_eventt::resume(symex_eventt::enumt::NEXT, 8),
+       symex_eventt::resume(symex_eventt::enumt::JUMP, 10),
+       symex_eventt::resume(symex_eventt::enumt::NEXT, 8),
+       symex_eventt::result(symex_eventt::enumt::SUCCESS),
+       symex_eventt::resume(symex_eventt::enumt::JUMP, 10),
+       symex_eventt::result(symex_eventt::enumt::SUCCESS),
+       symex_eventt::resume(symex_eventt::enumt::NEXT, 8),
+       symex_eventt::result(symex_eventt::enumt::SUCCESS),
+       symex_eventt::resume(symex_eventt::enumt::JUMP, 10),
+       symex_eventt::result(symex_eventt::enumt::SUCCESS),
+       symex_eventt::resume(symex_eventt::enumt::NEXT, 8),
+       symex_eventt::result(symex_eventt::enumt::SUCCESS),
+       symex_eventt::resume(symex_eventt::enumt::JUMP, 10),
+       symex_eventt::result(symex_eventt::enumt::SUCCESS),
+       symex_eventt::resume(symex_eventt::enumt::NEXT, 8),
+       symex_eventt::result(symex_eventt::enumt::SUCCESS),
+       symex_eventt::resume(symex_eventt::enumt::JUMP, 10),
+       symex_eventt::result(symex_eventt::enumt::SUCCESS)};
+
+    // When --bdfs-diameter is huge, hybrid-bdfs should degenerate to BFS---that
+    // is, they have exactly the same sequence of events. This is because
+    // hybrid-bdfs never fills up its queue with enough paths to start DFSing
+    // from the breadth-obtained paths.
+    //
+    opts_callback = [](optionst &opts)
+      {
+        opts.set_option("unwind", 2U);
+        opts.set_option("bdfs-diameter", 1000U);
+      };
+    check_with_strategy("hybrid-bdfs", opts_callback, c, dfs_order);
+    check_with_strategy("fifo", opts_callback, c, dfs_order);
+
+    opts_callback = [](optionst &opts)
+      {
+        opts.set_option("unwind", 2U);
+        opts.set_option("bdfs-diameter", 2U);
+      };
+    check_with_strategy("hybrid-bdfs", opts_callback, c, dfs_order);
+  }
 }
 
 // In theory, there should be no need to change the code below when adding new

@@ -300,6 +300,7 @@ private:
   "(no-self-loops-to-assumptions)"                                             \
   "(partial-loops)"                                                            \
   "(paths):"                                                                   \
+  "(bdfs-diameter):"                                                           \
   "(show-symex-strategies)"                                                    \
   "(depth):"                                                                   \
   "(unwind):"                                                                  \
@@ -309,6 +310,7 @@ private:
 
 #define HELP_BMC                                                               \
   " --paths [strategy]           explore paths one at a time\n"                \
+  " --bdfs-diameter N            read output of --show-symex-strategies\n"     \
   " --show-symex-strategies      list strategies for use with --paths\n"       \
   " --program-only               only show program expression\n"               \
   " --show-loops                 show the loops in the program\n"              \
