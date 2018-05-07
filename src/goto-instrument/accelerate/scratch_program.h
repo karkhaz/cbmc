@@ -42,7 +42,8 @@ public:
       symex_symbol_table(),
       ns(symbol_table, symex_symbol_table),
       equation(),
-      strategy_context(),
+      log(mh),
+      strategy_context(log),
       path_storage(strategy_context),
       options(),
       symex(mh, symbol_table, equation, options, path_storage),
@@ -84,6 +85,7 @@ protected:
   symbol_tablet symex_symbol_table;
   namespacet ns;
   symex_target_equationt equation;
+  messaget log;
   const path_storaget::strategy_contextt strategy_context;
   degenerate_path_storaget path_storage;
   optionst options;
