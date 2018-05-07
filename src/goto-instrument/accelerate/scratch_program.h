@@ -85,7 +85,7 @@ protected:
   namespacet ns;
   symex_target_equationt equation;
   const path_storaget::strategy_contextt strategy_context;
-  path_fifot path_storage;
+  degenerate_path_storaget path_storage;
   optionst options;
   goto_symext symex;
 
