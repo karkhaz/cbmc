@@ -319,7 +319,7 @@ void _check_with_strategy(
 
   path_strategy_choosert chooser;
   REQUIRE(chooser.is_valid_strategy(strategy));
-  const path_storaget::strategy_contextt strategy_context(log);
+  const path_storaget::strategy_contextt strategy_context(log, opts);
   std::unique_ptr<path_storaget> worklist = chooser.get(
     strategy, strategy_context);
 
