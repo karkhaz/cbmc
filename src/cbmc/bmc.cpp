@@ -588,6 +588,7 @@ int bmct::do_language_agnostic_bmc(
       bmc.set_ui(ui);
       if(driver_configure_bmc)
         driver_configure_bmc(bmc, symbol_table);
+      worklist->customise_goto_symext(bmc.symex);
       tmp_result = bmc.run(model);
       if(tmp_result != safety_checkert::resultt::PAUSED)
       {
@@ -640,6 +641,7 @@ int bmct::do_language_agnostic_bmc(
         callback_after_symex);
       if(driver_configure_bmc)
         driver_configure_bmc(pe, symbol_table);
+      worklist->customise_goto_symext(pe.symex);
       tmp_result = pe.run(model);
       if(tmp_result != safety_checkert::resultt::PAUSED)
       {

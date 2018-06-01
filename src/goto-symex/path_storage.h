@@ -15,6 +15,8 @@
 
 #include <memory>
 
+class goto_symext;
+
 /// \brief Storage for symbolic execution paths to be resumed later
 ///
 /// This data structure supports saving partially-executed symbolic
@@ -95,6 +97,11 @@ public:
   {
     PRECONDITION(!empty());
     private_pop();
+  }
+
+  virtual void customise_goto_symext(goto_symext &goto_symex)
+  {
+    // Empty implementation
   }
 
   /// \brief callback indicating that a client has finished symexing a path
