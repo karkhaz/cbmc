@@ -590,7 +590,10 @@ int bmct::do_language_agnostic_bmc(
         driver_configure_bmc(bmc, symbol_table);
       tmp_result = bmc.run(model);
       if(tmp_result != safety_checkert::resultt::PAUSED)
+      {
         final_result = tmp_result;
+        worklist->notify_path_completion();
+      }
     }
     INVARIANT(
       opts.get_bool_option("paths") || worklist->empty(),
@@ -639,7 +642,10 @@ int bmct::do_language_agnostic_bmc(
         driver_configure_bmc(pe, symbol_table);
       tmp_result = pe.run(model);
       if(tmp_result != safety_checkert::resultt::PAUSED)
+      {
         final_result &= tmp_result;
+        worklist->notify_path_completion();
+      }
       worklist->pop();
     }
   }

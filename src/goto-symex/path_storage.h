@@ -97,6 +97,12 @@ public:
     private_pop();
   }
 
+  /// \brief callback indicating that a client has finished symexing a path
+  virtual void notify_path_completion()
+  {
+    // Empty implementation
+  }
+
   /// \brief How many paths does this storage contain?
   virtual std::size_t size() const = 0;
 
