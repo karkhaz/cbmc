@@ -305,6 +305,7 @@ private:
   "(no-self-loops-to-assumptions)"                                             \
   "(partial-loops)"                                                            \
   "(paths):"                                                                   \
+  "(end-merge-depth):"                                                         \
   "(show-symex-strategies)"                                                    \
   "(depth):"                                                                   \
   "(unwind):"                                                                  \

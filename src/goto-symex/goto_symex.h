@@ -59,9 +59,9 @@ public:
     : should_pause_symex(false),
       options(options),
       max_depth(options.get_unsigned_int_option("depth")),
-      doing_path_exploration(options.is_set("paths")),
       allow_pointer_unsoundness(
         options.get_bool_option("allow-pointer-unsoundness")),
+      doing_path_exploration(options.is_set("paths")),
       total_vccs(0),
       remaining_vccs(0),
       constant_propagation(true),
@@ -204,10 +204,11 @@ protected:
   const optionst &options;
 
   const unsigned max_depth;
-  const bool doing_path_exploration;
   const bool allow_pointer_unsoundness;
 
 public:
+  bool doing_path_exploration;
+
   // these bypass the target maps
   virtual void symex_step_goto(statet &, bool taken);
 

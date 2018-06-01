@@ -199,6 +199,24 @@ private:
   }
 };
 
+class path_end_mergert : public path_lifot
+{
+public:
+  explicit path_end_mergert(const strategy_contextt &ctx)
+  : path_lifot(ctx),
+    switch_to_path_merging(false),
+    merge_depth(ctx.options.get_unsigned_int_option("end-merge-depth"))
+  {
+  }
+
+  void notify_path_completion() override;
+  void customise_goto_symext(goto_symext &) override;
+
+protected:
+  bool switch_to_path_merging;
+  const unsigned merge_depth;
+};
+
 /// \brief Factory and information for path_storaget
 class path_strategy_choosert
 {
