@@ -601,6 +601,7 @@ int bmct::do_language_agnostic_bmc(
 
       if(tmp_result != safety_checkert::resultt::PAUSED)
       {
+        message.status() << "Notifying path completion (bmc)" << message.eom;
         final_result = tmp_result;
         worklist->notify_path_completion();
       }
@@ -663,6 +664,7 @@ int bmct::do_language_agnostic_bmc(
 
       if(tmp_result != safety_checkert::resultt::PAUSED)
       {
+        message.status() << "Notifying path completion (pe)" << message.eom;
         final_result &= tmp_result;
         worklist->notify_path_completion();
       }

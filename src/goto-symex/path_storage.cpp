@@ -8,6 +8,8 @@ Author: Kareem Khazem <karkhaz@karkhaz.com>
 
 #include "path_storage.h"
 
+#include "goto_symex.h"
+
 #include <sstream>
 
 #include <util/exit_codes.h>
@@ -80,6 +82,36 @@ void path_fifot::clear()
 }
 
 // _____________________________________________________________________________
+// path_end_mergert
+
+void path_end_mergert::customise_goto_symext(goto_symext &symex)
+{
+  if(switch_to_path_merging)
+  {
+    context.log.status() << "Switching to path merging" << context.log.eom;
+    switch_to_path_merging = false;
+    symex.doing_path_exploration = false;
+  }
+}
+
+void path_end_mergert::notify_path_completion()
+{
+  // Needs to be one less than merge_depth, since bmct does one more pop after
+  // this method returns
+  if(size() > merge_depth - 1)
+  {
+    for(int i = 0; i < merge_depth - 1; ++i)
+    {
+      peek();
+      pop();
+    }
+    peek();
+
+    switch_to_path_merging = true;
+  }
+}
+
+// _____________________________________________________________________________
 // path_strategy_choosert
 
 std::string path_strategy_choosert::show_strategies() const
@@ -108,6 +140,22 @@ void path_strategy_choosert::set_path_strategy_options(
       exit(CPROVER_EXIT_USAGE_ERROR);
     }
     options.set_option("exploration-strategy", strategy);
+
+    if(cmdline.isset("end-merge-depth"))
+    {
+      if(strategy != "lifo-end-merge")
+      {
+        message.error()
+          << "`--end-merge-depth` must be used with `--paths lifo-end-merge`."
+          << message.eom;
+        exit(CPROVER_EXIT_USAGE_ERROR);
+      }
+      if(cmdline.isset("end-merge-depth"))
+        options.set_option(
+          "end-merge-depth", cmdline.get_value("end-merge-depth"));
+      else
+        options.set_option("end-merge-depth", 4U);
+    }
   }
   else
     options.set_option("exploration-strategy", default_strategy());
@@ -123,6 +171,13 @@ path_strategy_choosert::path_strategy_choosert()
          // NOLINTNEXTLINE(whitespace/braces)
          [](const path_storaget::strategy_contextt &ctx) {
            return util_make_unique<path_lifot>(ctx);
+         }}},
+       {"lifo-end-merge",
+        {" lifo-end-merge               like lifo, but does path merging\n"
+         "                              at the end of each path.\n",
+         // NOLINTNEXTLINE(whitespace/braces)
+         [](const path_storaget::strategy_contextt &ctx) {
+           return util_make_unique<path_end_mergert>(ctx);
          }}},
        {"fifo",
         {" fifo                         next instruction is pushed before\n"
