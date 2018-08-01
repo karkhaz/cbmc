@@ -41,6 +41,29 @@ public:
     }
   };
 
+  /// \brief Data needed for path_storaget objects to make strategy decisions
+  ///
+  /// Different path exploration strategies need different information passed to
+  /// them when they are constructed in order to decide which paths to resume
+  /// next. Simple strategies (LIFO, FIFO etc.) don't need additional
+  /// information, while more sophisticated strategies may require arguments
+  /// from the command line, a reference to the goto-program, etc.
+  ///
+  /// This struct collects all this information in one place, so that when a new
+  /// strategy needs a new parameter, it can simply be added to this struct. The
+  /// alternative is to change the constructor for path_storaget and all of its
+  /// subclasses every time we add a new strategy, which obfuscates the git
+  /// history.
+  struct strategy_contextt
+  {
+    // Empty for now
+  };
+
+  explicit path_storaget(const strategy_contextt &ctx)
+    : context(ctx)
+  {
+  }
+
   virtual ~path_storaget() = default;
 
   /// \brief Reference to the next path to resume
@@ -85,6 +108,9 @@ public:
     return size() == 0;
   };
 
+protected:
+  const strategy_contextt &context;
+
 private:
   // Derived classes should override these methods, allowing the base class to
   // enforce preconditions.
@@ -96,6 +122,11 @@ private:
 class path_lifot : public path_storaget
 {
 public:
+  explicit path_lifot(const strategy_contextt &ctx)
+    : path_storaget(ctx)
+  {
+  }
+
   void push(const patht &, const patht &) override;
   std::size_t size() const override;
   void clear() override;
@@ -113,6 +144,11 @@ private:
 class path_fifot : public path_storaget
 {
 public:
+  explicit path_fifot(const strategy_contextt &ctx)
+    : path_storaget(ctx)
+  {
+  }
+
   void push(const patht &, const patht &) override;
   std::size_t size() const override;
   void clear() override;
@@ -144,12 +180,14 @@ public:
   ///
   /// Ensure that path_strategy_choosert::is_valid_strategy() returns true for a
   /// particular string before calling this function on that string.
-  std::unique_ptr<path_storaget> get(const std::string strategy) const
+  std::unique_ptr<path_storaget> get(
+    const std::string strategy,
+    const path_storaget::strategy_contextt &ctx) const
   {
     auto found = strategies.find(strategy);
     INVARIANT(
       found != strategies.end(), "Unknown strategy '" + strategy + "'.");
-    return found->second.second();
+    return found->second.second(ctx);
   }
 
   /// \brief add `paths` and `exploration-strategy` option, suitable to be
@@ -168,7 +206,8 @@ protected:
   /// a derived class of path_storaget that implements that strategy.
   std::map<const std::string,
            std::pair<const std::string,
-                     const std::function<std::unique_ptr<path_storaget>()>>>
+                     const std::function<std::unique_ptr<path_storaget>(
+                       const path_storaget::strategy_contextt &ctx)>>>
     strategies;
 };
 
