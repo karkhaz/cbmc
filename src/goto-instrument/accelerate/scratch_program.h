@@ -42,7 +42,8 @@ public:
       symex_symbol_table(),
       ns(symbol_table, symex_symbol_table),
       equation(),
-      path_storage(),
+      strategy_context(),
+      path_storage(strategy_context),
       options(),
       symex(mh, symbol_table, equation, options, path_storage),
       satcheck(util_make_unique<satcheckt>()),
@@ -83,6 +84,7 @@ protected:
   symbol_tablet symex_symbol_table;
   namespacet ns;
   symex_target_equationt equation;
+  const path_storaget::strategy_contextt strategy_context;
   path_fifot path_storage;
   optionst options;
   goto_symext symex;

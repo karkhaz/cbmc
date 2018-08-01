@@ -120,16 +120,18 @@ path_strategy_choosert::path_strategy_choosert()
          "                              goto target; paths are popped in\n"
          "                              last-in, first-out order. Explores\n"
          "                              the program tree depth-first.\n",
-         []() { // NOLINT(whitespace/braces)
-           return util_make_unique<path_lifot>();
+         // NOLINTNEXTLINE(whitespace/braces)
+         [](const path_storaget::strategy_contextt &ctx) {
+           return util_make_unique<path_lifot>(ctx);
          }}},
        {"fifo",
         {" fifo                         next instruction is pushed before\n"
          "                              goto target; paths are popped in\n"
          "                              first-in, first-out order. Explores\n"
          "                              the program tree breadth-first.\n",
-         []() { // NOLINT(whitespace/braces)
-           return util_make_unique<path_fifot>();
+         // NOLINTNEXTLINE(whitespace/braces)
+         [](const path_storaget::strategy_contextt &ctx) {
+           return util_make_unique<path_fifot>(ctx);
          }}}})
 {
 }
