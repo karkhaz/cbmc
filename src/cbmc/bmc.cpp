@@ -590,6 +590,15 @@ int bmct::do_language_agnostic_bmc(
         driver_configure_bmc(bmc, symbol_table);
       worklist->customise_goto_symext(bmc.symex);
       tmp_result = bmc.run(model);
+
+      if(
+        tmp_result == safety_checkert::resultt::UNSAFE &&
+        opts.get_bool_option("stop-on-fail") && opts.is_set("paths"))
+      {
+        worklist->clear();
+        return CPROVER_EXIT_VERIFICATION_UNSAFE;
+      }
+
       if(tmp_result != safety_checkert::resultt::PAUSED)
       {
         message.status() << "Notifying path completion (bmc)" << message.eom;
@@ -644,6 +653,15 @@ int bmct::do_language_agnostic_bmc(
         driver_configure_bmc(pe, symbol_table);
       worklist->customise_goto_symext(pe.symex);
       tmp_result = pe.run(model);
+
+      if(
+        tmp_result == safety_checkert::resultt::UNSAFE &&
+        opts.get_bool_option("stop-on-fail") && opts.is_set("paths"))
+      {
+        worklist->clear();
+        return CPROVER_EXIT_VERIFICATION_UNSAFE;
+      }
+
       if(tmp_result != safety_checkert::resultt::PAUSED)
       {
         message.status() << "Notifying path completion (pe)" << message.eom;
