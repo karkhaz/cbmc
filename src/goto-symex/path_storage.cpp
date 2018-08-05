@@ -138,6 +138,13 @@ std::size_t breadth_depth_path_storaget::size() const
   return total;
 }
 
+void breadth_depth_path_storaget::clear()
+{
+  breadth_list.clear();
+  depth_list.clear();
+  current_depth_queue = depth_list.end();
+}
+
 // _____________________________________________________________________________
 // path_lifot
 
@@ -168,6 +175,11 @@ std::size_t path_lifot::size() const
   return paths.size();
 }
 
+void path_lifot::clear()
+{
+  paths.clear();
+}
+
 // _____________________________________________________________________________
 // path_fifot
 
@@ -192,6 +204,11 @@ void path_fifot::private_pop()
 std::size_t path_fifot::size() const
 {
   return paths.size();
+}
+
+void path_fifot::clear()
+{
+  paths.clear();
 }
 
 // _____________________________________________________________________________

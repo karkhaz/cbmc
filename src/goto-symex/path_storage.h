@@ -80,6 +80,14 @@ public:
     return private_peek();
   }
 
+  /// \brief Clear all saved paths
+  ///
+  /// This is typically used because we want to terminate symbolic execution
+  /// early. It doesn't matter too much in terms of memory usage since CBMC
+  /// typically exits soon after we do that, however it's nice to have tests
+  /// that check that the worklist is always empty when symex finishes.
+  virtual void clear() = 0;
+
   /// \brief Add paths to resume to the storage
   ///
   /// Symbolic execution is suspended when we reach a conditional goto
@@ -160,6 +168,7 @@ public:
 
   void push(const patht &, const patht &) override;
   std::size_t size() const override;
+  void clear() override;
 
 protected:
   std::list<path_storaget::patht>::iterator last_peeked;
@@ -181,6 +190,7 @@ public:
 
   void push(const patht &, const patht &) override;
   std::size_t size() const override;
+  void clear() override;
 
 protected:
   std::list<patht> paths;
@@ -207,6 +217,7 @@ public:
   {
   }
 
+  void clear() override;
   virtual void notify_path_terminated() override;
   virtual bool interested_in_path_termination() const override
   {
@@ -241,6 +252,11 @@ public:
   std::size_t size() const override
   {
     INVARIANT(false, "Cannot take the size of a degenerate_path_storaget");
+  }
+
+  void clear() override
+  {
+    INVARIANT(false, "Cannot clear a degenerate_path_storaget");
   }
 
 private:
