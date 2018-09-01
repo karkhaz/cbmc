@@ -136,6 +136,13 @@ std::size_t breadth_depth_path_storaget::size() const
   return total;
 }
 
+void breadth_depth_path_storaget::clear()
+{
+  breadth_list.clear();
+  depth_list.clear();
+  current_depth_queue = depth_list.end();
+}
+
 // _____________________________________________________________________________
 // path_lifot
 

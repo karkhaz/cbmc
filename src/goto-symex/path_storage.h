@@ -193,6 +193,7 @@ class breadth_depth_path_storaget : public path_storaget
 public:
   void push(const patht &, const patht &) override;
   std::size_t size() const override;
+  void clear() override;
   explicit breadth_depth_path_storaget(const strategy_contextt &ctx)
   : path_storaget(ctx),
     diameter(
