@@ -463,6 +463,7 @@ inline int strncmp(const char *s1, const char *s2, size_t n)
   #else
   __CPROVER_size_t i=0;
   unsigned char ch1, ch2;
+  if (n == 0) return 0;
   do
   {
     ch1=s1[i];
