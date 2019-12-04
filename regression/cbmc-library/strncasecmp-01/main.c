@@ -1,7 +1,8 @@
 #include <assert.h>
 #include <string.h>
 
-int main() {
+int main()
+{
   char a[] = "abc";
   char b[] = "xyz";
   char A[] = "ABC";

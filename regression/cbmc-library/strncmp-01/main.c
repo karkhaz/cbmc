@@ -4,7 +4,8 @@
 #include <assert.h>
 #include <string.h>
 
-int main() {
+int main()
+{
   char a[] = "abc";
   char b[] = "xyz";
   assert(strncmp(a,b,0) == 0);
