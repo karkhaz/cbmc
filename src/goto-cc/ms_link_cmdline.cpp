@@ -325,6 +325,7 @@ static std::string to_upper_string(const std::string &s)
 
 void ms_link_cmdlinet::process_link_option(const std::string &s)
 {
+  std::cerr << "KK processing: " << s << "\n";
   if(s.empty())
     return;
 
