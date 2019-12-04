@@ -477,7 +477,8 @@ void ms_cl_cmdlinet::process_cl_option(const std::string &s)
         option.optchar=ms_cl_prefix[0];
         optnr=getoptnr(option.optchar);
         std::cerr << "KK prefix size is 1 " << std::endl;
-        std::cerr << "KK optnr is " << std::to_string(optnr) << std::endl;
+        if(optnr)
+          std::cerr << "KK optnr is " << std::to_string(*optnr) << std::endl;
       }
       else
       {
@@ -486,7 +487,8 @@ void ms_cl_cmdlinet::process_cl_option(const std::string &s)
         option.optchar=0;
         optnr=getoptnr(option.optstring);
         std::cerr << "KK is long option " << std::endl;
-        std::cerr << "KK optnr is " << std::to_string(optnr) << std::endl;
+        if(optnr)
+          std::cerr << "KK optnr is " << std::to_string(*optnr) << std::endl;
       }
 
       if(!optnr.has_value())
@@ -500,7 +502,7 @@ void ms_cl_cmdlinet::process_cl_option(const std::string &s)
       options[*optnr].values.push_back(
         std::string(s, ms_cl_prefix.size()+1, std::string::npos));
 
-      std::cerr << "KK back of values is " << options[*optnr].values.back;
+      std::cerr << "KK back of values is " << options[*optnr].values.back();
       return;
     }
   }
