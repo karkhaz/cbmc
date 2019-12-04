@@ -336,7 +336,7 @@ void ms_link_cmdlinet::process_link_option(const std::string &s)
 
   for(const std::string &ms_link_option : ms_link_options)
   {
-    std::cerr << "KK ms_link_option: " < ms_link_option << std::endl;
+    std::cerr << "KK ms_link_option: " << ms_link_option << "\n";
 
     // These are case insensitive.
     if(
@@ -362,7 +362,7 @@ void ms_link_cmdlinet::process_link_option(const std::string &s)
         options[*optnr].values.push_back(
           std::string(s, ms_link_option.size() + 2, std::string::npos));
 
-        std::cerr << "KK pushed back: " < options[*optnr].values.back() << std::endl;
+        std::cerr << "KK pushed back: " << options[*optnr].values.back() << "\n";
       }
 
       return;
