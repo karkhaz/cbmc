@@ -428,8 +428,10 @@ void ms_cl_cmdlinet::process_cl_option(const std::string &s)
 
   for(std::size_t j=0; ms_cl_flags[j]!=nullptr; j++)
   {
+  std::cerr << "KK" << std::endl;
     if(std::string(s, 1, std::string::npos)==ms_cl_flags[j])
     {
+      std::cerr << "reading an option" << std::endl;
       cmdlinet::optiont option;
       optionalt<std::size_t> optnr;
 
@@ -439,6 +441,8 @@ void ms_cl_cmdlinet::process_cl_option(const std::string &s)
         option.optstring.clear();
         option.optchar=s[1];
         optnr=getoptnr(option.optchar);
+        if(optnr)
+          std::cerr << "KK optnr is " << std::to_string(*optnr) << std::endl;
       }
       else
       {
@@ -446,6 +450,9 @@ void ms_cl_cmdlinet::process_cl_option(const std::string &s)
         option.optstring=std::string(s, 1, std::string::npos);
         option.optchar=0;
         optnr=getoptnr(option.optstring);
+        std::cerr << "KK option is" << option.optstring << std::endl;
+        if(optnr)
+          std::cerr << "KK optnr is " << std::to_string(*optnr) << std::endl;
       }
 
       if(!optnr.has_value())
