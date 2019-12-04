@@ -465,7 +465,7 @@ void ms_cl_cmdlinet::process_cl_option(const std::string &s)
     std::cerr << "reading an option" << std::endl;
     std::string ms_cl_prefix=ms_cl_prefixes[j];
 
-    std::cerr << "option: " ms_cl_prefix << std::endl;
+    std::cerr << "option: " << ms_cl_prefix << std::endl;
     if(std::string(s, 1, ms_cl_prefix.size())==ms_cl_prefix)
     {
       std::cerr << "KK found prefix " << ms_cl_prefix << "'" << std::endl;
