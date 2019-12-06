@@ -3,7 +3,7 @@
 
 int main()
 {
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
   // strncasecmp is a POSIX call not available on Windows
   // Can cbmc-library regression be configured to just skip this test
   // on Windows?
