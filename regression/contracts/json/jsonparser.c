@@ -1,3 +1,12 @@
+/*
+ * Pure-functional recursive-descent JSON parser
+ *
+ * Author: Mark R. Tuttle <mrtuttle@amazon.com>
+ *
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ */
+
 #include <stdlib.h>
 #include <string.h>
 
