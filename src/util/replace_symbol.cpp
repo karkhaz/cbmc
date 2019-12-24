@@ -46,7 +46,7 @@ bool replace_symbolt::replace_symbol_expr(symbol_exprt &s) const
 
   DATA_INVARIANT(
     s.type() == it->second.type(),
-    "type of symbol to be replaced should match");
+    "to be replaced should match");
   static_cast<exprt &>(s) = it->second;
 
   return false;

@@ -23,48 +23,9 @@ Date: February 2016
 
 #include <linking/static_lifetime_init.h>
 
+#include <util/message.h>
+
 #include "loop_utils.h"
-
-class code_contractst
-{
-public:
-  code_contractst(
-    symbol_tablet &_symbol_table,
-    goto_functionst &_goto_functions):
-      ns(_symbol_table),
-      symbol_table(_symbol_table),
-      goto_functions(_goto_functions),
-      temporary_counter(0)
-  {
-  }
-
-  void operator()();
-
-protected:
-  namespacet ns;
-  symbol_tablet &symbol_table;
-  goto_functionst &goto_functions;
-
-  unsigned temporary_counter;
-
-  std::unordered_set<irep_idt> summarized;
-
-  void code_contracts(goto_functionst::goto_functiont &goto_function);
-
-  void apply_contract(
-    goto_programt &goto_program,
-    goto_programt::targett target);
-
-  void add_contract_check(
-    const irep_idt &function,
-    goto_programt &dest);
-
-  const symbolt &new_tmp_symbol(
-    const typet &type,
-    const source_locationt &source_location,
-    const irep_idt &function_id,
-    const irep_idt &mode);
-};
 
 static void check_apply_invariants(
   goto_functionst::goto_functiont &goto_function,
@@ -151,6 +112,14 @@ static void check_apply_invariants(
     loop_end->set_condition(false_exprt());
   else
     loop_end->set_condition(boolean_negate(loop_end->get_condition()));
+}
+
+bool code_contractst::has_contract(const irep_idt fun_name)
+{
+  const symbolt &f_sym=ns.lookup(fun_name);
+  const code_typet &type=to_code_type(f_sym.type);
+  const exprt ensures = static_cast<const exprt&>(type.find(ID_C_spec_ensures));
+  return !ensures.is_nil();
 }
 
 void code_contractst::apply_contract(
@@ -257,14 +226,73 @@ const symbolt &code_contractst::new_tmp_symbol(
     symbol_table);
 }
 
+bool code_contractst::enforce_contract(const std::string &fun_to_enforce)
+{
+  // Rename old function
+  std::stringstream ss;
+  ss << CPROVER_PREFIX << "contracts_original_" << fun_to_enforce;
+  const irep_idt mangled(ss.str());
+  const irep_idt original(fun_to_enforce);
+
+  auto old_fun = goto_functions.function_map.find(original);
+  if(old_fun == goto_functions.function_map.end())
+  {
+    log.error() << "Could not find function '" << fun_to_enforce
+                << "' in goto-program; not enforcing contracts."
+                << messaget::eom;
+    return true;
+  }
+  std::swap(goto_functions.function_map[mangled], old_fun->second);
+  goto_functions.function_map.erase(old_fun);
+
+  // Place a new symbol with the mangled name into the symbol table
+  source_locationt sl;
+  sl.set_file("instrumented for code contracts");
+  sl.set_line("0");
+  symbolt mangled_sym;
+  const symbolt *original_sym = symbol_table.lookup(original);
+  mangled_sym = *original_sym;
+  mangled_sym.name = mangled;
+  mangled_sym.base_name = mangled;
+  mangled_sym.location = sl;
+  std::pair<symbolt &, bool> mangled_found =
+    symbol_table.insert(std::move(mangled_sym));
+  INVARIANT(
+    mangled_found.second,
+    "There should be no existing function called " + ss.str() + " in the "
+    "symbol table because that name is a mangled name");
+
+  // Insert wrapper function into goto_functions
+  auto nexist_old_fun = goto_functions.function_map.find(original);
+  INVARIANT(
+    nexist_old_fun == goto_functions.function_map.end(),
+    "There should be no function called " + fun_to_enforce + " in the "
+    "function map because that function should have had its name mangled");
+
+  auto mangled_fun = goto_functions.function_map.find(mangled);
+  INVARIANT(
+    mangled_fun != goto_functions.function_map.end(),
+    "There should be a function called " + ss.str() + " in the function map "
+    "because we inserted a fresh goto-program with that mangled name");
+
+  goto_functiont &wrapper = goto_functions.function_map[original];
+  wrapper.parameter_identifiers = mangled_fun->second.parameter_identifiers;
+  if(mangled_fun->second.type.is_not_nil())
+    wrapper.type = mangled_fun->second.type;
+  wrapper.body.add(goto_programt::make_end_function(sl));
+  add_contract_check(original, mangled, wrapper.body);
+  return false;
+}
+
 void code_contractst::add_contract_check(
-  const irep_idt &function,
+  const irep_idt &wrapper_fun,
+  const irep_idt &mangled_fun,
   goto_programt &dest)
 {
   assert(!dest.instructions.empty());
 
   goto_functionst::function_mapt::iterator f_it=
-    goto_functions.function_map.find(function);
+    goto_functions.function_map.find(mangled_fun);
   assert(f_it!=goto_functions.function_map.end());
 
   const goto_functionst::goto_functiont &gf=f_it->second;
@@ -299,9 +327,9 @@ void code_contractst::add_contract_check(
     skip->source_location));
 
   // prepare function call including all declarations
-  const symbolt &function_symbol = ns.lookup(function);
+  const symbolt &function_symbol = ns.lookup(mangled_fun);
   code_function_callt call(function_symbol.symbol_expr());
-  replace_symbolt replace;
+  replace_symbolt replace_syms;
 
   // decl ret
   if(gf.type.return_type()!=empty_typet())
@@ -309,7 +337,7 @@ void code_contractst::add_contract_check(
     symbol_exprt r = new_tmp_symbol(
                        gf.type.return_type(),
                        skip->source_location,
-                       function,
+                       wrapper_fun,
                        function_symbol.mode)
                        .symbol_expr();
     check.add(goto_programt::make_decl(r, skip->source_location));
@@ -317,7 +345,7 @@ void code_contractst::add_contract_check(
     call.lhs()=r;
 
     symbol_exprt ret_val(CPROVER_PREFIX "return_value", call.lhs().type());
-    replace.insert(ret_val, r);
+    replace_syms.insert(ret_val, r);
   }
 
   // decl parameter1 ...
@@ -329,14 +357,14 @@ void code_contractst::add_contract_check(
     symbol_exprt p = new_tmp_symbol(
                        parameter_symbol.type,
                        skip->source_location,
-                       function,
+                       wrapper_fun,
                        parameter_symbol.mode)
                        .symbol_expr();
     check.add(goto_programt::make_decl(p, skip->source_location));
 
     call.arguments().push_back(p);
 
-    replace.insert(parameter_symbol.symbol_expr(), p);
+    replace_syms.insert(parameter_symbol.symbol_expr(), p);
   }
 
   // assume(requires)
@@ -344,18 +372,18 @@ void code_contractst::add_contract_check(
   {
     // rewrite any use of parameters
     exprt requires_cond = requires;
-    replace(requires_cond);
+    replace_syms(requires_cond);
 
     check.add(goto_programt::make_assumption(
       requires_cond, requires.source_location()));
   }
 
-  // ret=function(parameter1, ...)
+  // ret=mangled_function(parameter1, ...)
   check.add(goto_programt::make_function_call(call, skip->source_location));
 
   // rewrite any use of __CPROVER_return_value
   exprt ensures_cond = ensures;
-  replace(ensures_cond);
+  replace_syms(ensures_cond);
 
   // assert(ensures)
   check.add(
@@ -370,25 +398,76 @@ void code_contractst::add_contract_check(
   dest.destructive_insert(dest.instructions.begin(), check);
 }
 
-void code_contractst::operator()()
+bool code_contractst::replace_calls(
+  const std::list<std::string> &funs_to_replace)
 {
-  Forall_goto_functions(it, goto_functions)
-    code_contracts(it->second);
+  bool fail = false;
+  Forall_goto_functions(fit, goto_functions)
+  {
+    Forall_goto_program_instructions(it, fit->second.body)
+    {
+      if(it->is_function_call())
+      {
+        const code_function_callt &call = it->get_function_call();
 
-  goto_functionst::function_mapt::iterator i_it=
-    goto_functions.function_map.find(INITIALIZE_FUNCTION);
-  assert(i_it!=goto_functions.function_map.end());
+        // TODO we don't handle function pointers
+        if(call.function().id() != ID_symbol)
+          continue;
 
-  for(const auto &contract : summarized)
-    add_contract_check(contract, i_it->second.body);
+        const irep_idt &fun_name =
+          to_symbol_expr(call.function()).get_identifier();
+        auto found = std::find(
+          funs_to_replace.begin(),
+          funs_to_replace.end(),
+          fun_name.c_str());
+        if(found == funs_to_replace.end())
+          continue;
 
-  // remove skips
-  remove_skip(i_it->second.body);
+        if(!has_contract(fun_name))
+        {
+          log.error() << "Function '" << fun_name
+                      << "' does not have a contract; "
+                      << "not replacing call with contract." << messaget::eom;
+          fail = true;
+          continue;
+        }
+
+        apply_contract(fit->second.body, it);
+      }
+    }
+  }
+
+  if(fail)
+    return true;
+
+  Forall_goto_functions(fit, goto_functions)
+  {
+    remove_skip(fit->second.body);
+  }
 
   goto_functions.update();
+
+  return false;
 }
 
-void code_contracts(goto_modelt &goto_model)
+bool code_contractst::replace_calls()
 {
-  code_contractst(goto_model.symbol_table, goto_model.goto_functions)();
+  std::list<std::string> funs_to_replace;
+  Forall_goto_functions(fit, goto_functions)
+  {
+    if(has_contract(fit->first))
+      funs_to_replace.push_back(fit->first.c_str());
+  }
+  return replace_calls(funs_to_replace);
+}
+
+bool code_contractst::enforce_contracts()
+{
+  std::list<std::string> funs_to_enforce;
+  Forall_goto_functions(fit, goto_functions)
+  {
+    if(has_contract(fit->first))
+      funs_to_enforce.push_back(fit->first.c_str());
+  }
+  return enforce_contracts(funs_to_enforce);
 }

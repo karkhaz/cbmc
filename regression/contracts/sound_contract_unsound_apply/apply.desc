@@ -1,0 +1,11 @@
+CORE
+main.c
+contracts:apply test-mode:cbmc function:main
+^EXIT=10$
+^SIGNAL=0$
+^VERIFICATION FAILED$
+^\[main.assertion.1\] line \d+ assertion x == 0: FAILURE$
+--
+--
+Expected to fail because the assertion doesn't match what the function
+ensures.

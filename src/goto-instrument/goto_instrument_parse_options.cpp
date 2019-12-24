@@ -1129,11 +1129,38 @@ void goto_instrument_parse_optionst::instrument_goto_program()
     goto_model.goto_functions.update();
   }
 
-  // verify and set invariants and pre/post-condition pairs
-  if(cmdline.isset("apply-code-contracts"))
+  const std::list<std::pair<std::string, std::string>> contract_flags({
+    {"replace-function-with-contract", "replace-all-with-contracts"},
+    {"enforce-function-contract", "enforce-all-contracts"}});
+  for(const auto &pair : contract_flags)
   {
-    log.status() << "Applying Code Contracts" << messaget::eom;
-    code_contracts(goto_model);
+    if(cmdline.isset(pair.first.c_str()) && cmdline.isset(pair.second.c_str()))
+    {
+      log.error() << "Pass at most one of --" << pair.first << " and --"
+                  << pair.second << "." << messaget::eom;
+      exit(CPROVER_EXIT_USAGE_ERROR);
+    }
+  }
+
+  if(cmdline.isset("replace-function-with-contract") ||
+     cmdline.isset("replace-all-with-contracts") ||
+     cmdline.isset("enforce-function-contract") ||
+     cmdline.isset("enforce-all-contracts"))
+  {
+    code_contractst cont(goto_model, log);
+
+    if(cmdline.isset("replace-function-with-contract"))
+      if(cont.replace_calls(
+          cmdline.get_comma_separated_values("replace-with-contracts")))
+        exit(CPROVER_EXIT_USAGE_ERROR);
+
+    if(cmdline.isset("replace-all-with-contracts"))
+      if(cont.replace_calls())
+        exit(CPROVER_EXIT_USAGE_ERROR);
+
+    if(cmdline.isset("enforce-all-contracts"))
+      if(cont.enforce_contracts())
+        exit(CPROVER_EXIT_USAGE_ERROR);
   }
 
   // replace function pointers, if explicitly requested

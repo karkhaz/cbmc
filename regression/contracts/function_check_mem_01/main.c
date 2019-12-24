@@ -1,27 +1,6 @@
-// function_check_mem_01
+#include <limits.h>
+#include <stdlib.h>
 
-// This test checks the use of pointer-related predicates in assumptions and
-// requires.
-// This test currently fails because of the lack of support for assuming
-// pointer predicates.
-
-#include <stddef.h>
-
-#define __CPROVER_VALID_MEM(ptr, size) \
-  __CPROVER_POINTER_OBJECT((ptr)) != __CPROVER_POINTER_OBJECT(NULL) && \
-  !__CPROVER_invalid_pointer((ptr)) && \
-  __CPROVER_POINTER_OBJECT((ptr)) != \
-  __CPROVER_POINTER_OBJECT(__CPROVER_deallocated) && \
-  __CPROVER_POINTER_OBJECT((ptr)) != \
-  __CPROVER_POINTER_OBJECT(__CPROVER_dead_object) && \
-  (__builtin_object_size((ptr), 1) >= (size) && \
-  __CPROVER_POINTER_OFFSET((ptr)) >= 0l || \
-   __CPROVER_DYNAMIC_OBJECT((ptr))) && \
-  (__CPROVER_POINTER_OFFSET((ptr)) >= 0 && \
-   __CPROVER_malloc_size >= (size) + __CPROVER_POINTER_OFFSET((ptr)) || \
-   __CPROVER_POINTER_OBJECT((ptr)) != \
-   __CPROVER_POINTER_OBJECT(__CPROVER_malloc_object))
-    
 typedef struct bar
 {
   int x;
@@ -30,16 +9,24 @@ typedef struct bar
 } bar;
 
 void foo(bar *x)
-  __CPROVER_requires(__CPROVER_VALID_MEM(x, sizeof(bar)))
+  __CPROVER_requires(
+      __CPROVER_r_ok(x, sizeof(bar)) &&
+      __CPROVER_w_ok(x, sizeof(bar)) &&
+      x->x < INT_MAX - 1)
+  __CPROVER_ensures(1)
+  // TODO
+  // It would be nice to be able to refer to the values of x (and x->x) both at
+  // function entry and exit. We should be able to write something like
+  //
+  //    __CPROVER_ensures(__CPROVER_initial(x->x) + 1 == __CPROVER_final(x->x))
 {
   x->x += 1;
-  return
+  return;
 }
 
 int main()
 {
-  bar *y;
-  __CPROVER_assume(__CPROVER_VALID_MEM(y, sizeof(bar)));
+  bar *y = malloc(sizeof(bar));
   y->x = 0;
-  return 0;
+  foo(y);
 }

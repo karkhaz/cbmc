@@ -1,0 +1,11 @@
+CORE
+main.c
+contracts:check test-mode:cbmc function:foo
+^EXIT=10$
+^SIGNAL=0$
+^VERIFICATION FAILED$
+^\[foo.1\] line \d+ assertion: FAILURE$
+--
+--
+This should fail because foo() is contracted to return 0, even though it
+actually returns 1.
