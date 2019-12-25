@@ -379,8 +379,10 @@ void code_contractst::operator()()
     goto_functions.function_map.find(INITIALIZE_FUNCTION);
   assert(i_it!=goto_functions.function_map.end());
 
+#if 0
   for(const auto &contract : summarized)
     add_contract_check(contract, i_it->second.body);
+#endif
 
   // remove skips
   remove_skip(i_it->second.body);

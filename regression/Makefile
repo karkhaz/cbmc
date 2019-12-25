@@ -1,7 +1,7 @@
 # For the best possible utilisation of multiple cores when
 # running tests in parallel, it is important that these directories are
 # listed with decreasing runtimes (i.e. longest running at the top)
-DIRS = cbmc \
+DIRS ?= cbmc \
        cbmc-library \
        goto-analyzer \
        ansi-c \
@@ -26,6 +26,7 @@ DIRS = cbmc \
        statement-list \
        systemc \
        contracts \
+       contracts-json \
        goto-cc-file-local \
        linking-goto-binaries \
        symtab2gb \

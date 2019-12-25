@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+#
+# Build and run tests depending on k:v pairs on third line of *.desc
+#
+# Author: Kareem Khazem <karkhaz@karkhaz.com>
+
+set -e
+
+# Given a list of 'key:value' pairs, return value at given key.
+# $1:     name of key
+# $2:     list of semicolon-separated acceptable values
+# $3..N:  space-separated list of colon-separated k:v pairs
+get_value_at_key()
+{
+    (>&2 echo "3: ${@:3:${#@}}")
+    (>&2 echo "last: ${2}")
+    for pair in "${@:3:${#@}}"; do
+        key=$(echo "${pair}" | awk -F: '{print $1}')
+        if ! [[ "${key}" == "$1" ]]; then
+            continue;
+        fi
+
+        val=$(echo "${pair}" | awk -F: '{print $2}')
+        if ! [[ "${2}" =~ "${val}" ]]; then
+            (
+              >&2 echo "Found invalid value '${val}' "
+              >&2 echo "for key '$1' in one of the .desc "
+              >&2 echo "files in directory '$(pwd)'. "
+              >&2 echo "Acceptable values are [${2}]."
+            )
+            exit 1
+        fi
+
+        echo "${val}"
+        return 0
+    done
+
+    (
+      >&2 echo "Could not find key '$1' in one of ";
+      >&2 echo "the .desc files in directory '$(pwd)'."
+    )
+    exit 1
+}
+
+goto_cc=$1
+goto_instrument=$2
+cbmc=$3
+
+is_windows=$4
+if [[ "${is_windows}" != "true" && "${is_windows}" != "false" ]]; then
+    (>&2 echo "\$is_windows should be true or false (got '${is_windows}')")
+    exit 1
+fi
+
+# This script expects a set of key:value pairs to be written on the
+# third line of the test.desc file. test.pl passes those pairs as
+# arguments to chain.sh. They are the fifth argument until the
+# second-last.
+KEY_VALS="${@:5:${#@}-5}"
+
+contracts_mode=$(get_value_at_key contracts "none check apply" ${KEY_VALS})
+test_mode=$(get_value_at_key test-mode "symbol cbmc" ${KEY_VALS})
+
+
+# Compile-time constants
+len=10
+keylen=10
+
+
+OUT_FILE=""
+for src in harness.c ../jsonparser.c; do
+    OUT_FILE=01_$(basename ${src%.c}).gb
+
+    if [[ "${is_windows}" == "true" ]]; then
+        "${goto_cc}"              \
+            /I..                  \
+            /DLEN="${len}"        \
+            /DKEYLEN="${keylen}"  \
+            /c                    \
+            /Fo"${OUT_FILE}"      \
+            "${src}"
+    else
+        "${goto_cc}"              \
+            -I..                  \
+            -DLEN="${len}"        \
+            -DKEYLEN="${keylen}"  \
+            -c                    \
+            -o "${OUT_FILE}"      \
+            "${src}"
+    fi
+done
+
+instrumented="02_instrumented-${contracts_mode}-${test_mode}.gb"
+
+if [[ "${contracts_mode}" == apply ]]; then
+    "${goto_instrument}" --apply-contract 01_jsonparser.gb "${instrumented}"
+elif [[ "${contracts_mode}" == check ]]; then
+    "${goto_instrument}" --check-contract 01_jsonparser.gb "${instrumented}"
+else
+  cp 01_jsonparser.gb "${instrumented}"
+fi
+
+
+linked="03_linked-${contracts_mode}-${test_mode}.gb"
+
+if [[ "${is_windows}" == "true" ]]; then
+    "${goto_cc}" "${instrumented}" 01_harness.gb /Fe"${linked}"
+else
+    "${goto_cc}" "${instrumented}" 01_harness.gb -o "${linked}"
+fi
+
+
+if [[ "${test_mode}" == "symbol" ]]; then
+    "${goto_instrument}" --show-symbol-table "${linked}"
+elif [[ "${test_mode}" == "cbmc" ]]; then
+    "${cbmc}"                     \
+        --unwind "${len}"         \
+        --unwinding-assertions    \
+        --bounds-check            \
+        --pointer-check           \
+        --nondet-static           \
+        --div-by-zero-check       \
+        --float-overflow-check    \
+        --nan-check               \
+        --pointer-overflow-check  \
+        --undefined-shift-check   \
+        --signed-overflow-check   \
+        --unsigned-overflow-check \
+        "${linked}"
+fi
