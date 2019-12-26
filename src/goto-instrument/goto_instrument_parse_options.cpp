@@ -1129,11 +1129,29 @@ void goto_instrument_parse_optionst::instrument_goto_program()
     goto_model.goto_functions.update();
   }
 
-  // verify and set invariants and pre/post-condition pairs
-  if(cmdline.isset("apply-code-contracts"))
+  if(cmdline.isset("replace-functions-with-contracts") &&
+     cmdline.isset("replace-all-with-contracts"))
   {
-    log.status() << "Applying Code Contracts" << messaget::eom;
-    code_contracts(goto_model);
+    log.error() << "Pass at most one of --replace-functions-with-contracts "
+                   "and --replace-all-with-contracts." << messaget::eom;
+		exit(CPROVER_EXIT_USAGE_ERROR);
+  }
+
+  if(cmdline.isset("replace-functions-with-contracts") ||
+     cmdline.isset("replace-all-with-contracts") ||
+     cmdline.isset("check-contracts"))
+  {
+    code_contractst cont(goto_model, log);
+
+    if(cmdline.isset("replace-functions-with-contract"))
+      contracts.replace(
+        cmdline.get_comma_separated_values("replace-with-contract"));
+
+    if(cmdline.isset("replace-all-with-contract"))
+      contracts.replace();
+
+    if(cmdline.isset("check-contracts"))
+      contracts.check();
   }
 
   // replace function pointers, if explicitly requested

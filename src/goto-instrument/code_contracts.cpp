@@ -25,47 +25,6 @@ Date: February 2016
 
 #include "loop_utils.h"
 
-class code_contractst
-{
-public:
-  code_contractst(
-    symbol_tablet &_symbol_table,
-    goto_functionst &_goto_functions):
-      ns(_symbol_table),
-      symbol_table(_symbol_table),
-      goto_functions(_goto_functions),
-      temporary_counter(0)
-  {
-  }
-
-  void operator()();
-
-protected:
-  namespacet ns;
-  symbol_tablet &symbol_table;
-  goto_functionst &goto_functions;
-
-  unsigned temporary_counter;
-
-  std::unordered_set<irep_idt> summarized;
-
-  void code_contracts(goto_functionst::goto_functiont &goto_function);
-
-  void apply_contract(
-    goto_programt &goto_program,
-    goto_programt::targett target);
-
-  void add_contract_check(
-    const irep_idt &function,
-    goto_programt &dest);
-
-  const symbolt &new_tmp_symbol(
-    const typet &type,
-    const source_locationt &source_location,
-    const irep_idt &function_id,
-    const irep_idt &mode);
-};
-
 static void check_apply_invariants(
   goto_functionst::goto_functiont &goto_function,
   const local_may_aliast &local_may_alias,
@@ -151,6 +110,14 @@ static void check_apply_invariants(
     loop_end->set_condition(false_exprt());
   else
     loop_end->set_condition(boolean_negate(loop_end->get_condition()));
+}
+
+bool code_contractst::has_contract(const irep_idt fun_name)
+{
+  const symbolt &f_sym=ns.lookup(fun_name);
+  const code_typet &type=to_code_type(f_sym.type);
+  const exprt ensures = static_cast<const exprt&>(type.find(ID_C_spec_ensures));
+  return !ensures.is_nil();
 }
 
 void code_contractst::apply_contract(
@@ -370,6 +337,41 @@ void code_contractst::add_contract_check(
   dest.destructive_insert(dest.instructions.begin(), check);
 }
 
+bool code_contractst::replace(const std::list<std::string> &funs_to_replace)
+{
+  Forall_goto_program_instructions(it, goto_function.body)
+  {
+    if(it->is_function_call())
+    {
+      const code_function_callt &call = it->get_function_call();
+
+      // TODO we don't handle function pointers
+      if(call.function.id() != ID_symbol)
+        continue;
+
+      const irep_idt &fun_name =
+        to_symbol_expr(call.function()).get_identifier();
+      auto found = std::find(
+        funs_to_replace.begin(),
+        funs_to_replace.end(),
+        std::str(fun_name.c_str()));
+      if(found == funs_to_replace.end())
+          continue;
+
+      if(!has_contract(fun_name))
+      {
+        log.warning << "Function '" << fun_name
+                    << "' does not appear to have a postcondition; "
+                    << "not replacing with contract." << messaget::eom;
+        continue;
+      }
+
+      apply_contract(goto_function.body, it);
+    }
+  }
+}
+
+#if 0
 void code_contractst::operator()()
 {
   Forall_goto_functions(it, goto_functions)
@@ -389,8 +391,4 @@ void code_contractst::operator()()
 
   goto_functions.update();
 }
-
-void code_contracts(goto_modelt &goto_model)
-{
-  code_contractst(goto_model.symbol_table, goto_model.goto_functions)();
-}
+#endif

@@ -5,7 +5,6 @@
 
 #include <stdlib.h>
 
-#include "proof.h"  // must come before jsonparser.h
 #include "jsonparser.h"
 
 int main(){
@@ -19,7 +18,7 @@ int main(){
 
   __CPROVER_assume(jsonlength < LEN);
   __CPROVER_assume(keylength < KEYLEN);
-  AWS_PRECONDITION(LOOKUP_PRECOND(json, jsonlength,
+  __CPROVER_assume(LOOKUP_PRECOND(json, jsonlength,
 				  key, keylength,
 				  &value, &valuelength));
   hash_lookup(json, jsonlength,

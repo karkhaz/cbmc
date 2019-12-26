@@ -5,7 +5,6 @@
 
 #include <stdlib.h>
 
-#include "proof.h"  // must come before jsonparser.h
 #include "jsonparser.h"
 
 int main(){
@@ -15,6 +14,6 @@ int main(){
   uint32_t start;
 
   __CPROVER_assume(length < LEN);
-  AWS_PRECONDITION(SKIP_STRING_PRECOND(json, length, start));
+  __CPROVER_assume(SKIP_STRING_PRECOND(json, length, start));
   skip_string(json, length, start);
 }

@@ -26,42 +26,42 @@
 /****************************************************************/
 
 uint32_t skip_colon(char *json, uint32_t length, uint32_t start) {
-  AWS_PRECONDITION(SKIP_COLON_PRECOND(json, length, start));
+  __CPROVER_assume(SKIP_COLON_PRECOND(json, length, start));
 
   uint32_t end = start;
   end = (start < length && end < length && IS_COLON(json, end)) ? end+1 : ERROR;
 
-  AWS_POSTCONDITION(SKIP_COLON_POSTCOND(json, length, start, end));
+  __CPROVER_assert(SKIP_COLON_POSTCOND(json, length, start, end), "postcondition");
   return end;
 }
 
 uint32_t skip_comma(char *json, uint32_t length, uint32_t start) {
-  AWS_PRECONDITION(SKIP_COMMA_PRECOND(json, length, start));
+  __CPROVER_assume(SKIP_COMMA_PRECOND(json, length, start));
 
   uint32_t end = start;
   end = (start < length && end < length && IS_COMMA(json, end)) ? end+1 : ERROR;
 
-  AWS_POSTCONDITION(SKIP_COMMA_POSTCOND(json, length, start, end));
+  __CPROVER_assert(SKIP_COMMA_POSTCOND(json, length, start, end), "postcondition");
   return end;
 }
 
 
 uint32_t skip_whitespace(char *json, uint32_t length, uint32_t start) {
-  AWS_PRECONDITION(SKIP_WHITESPACE_PRECOND(json, length, start));
+  __CPROVER_assume(SKIP_WHITESPACE_PRECOND(json, length, start));
 
   uint32_t end = start;
   end = (start < length && end < length) ? end : ERROR;
   while (end < length && IS_WHITESPACE(json, end)) end++;
   end = (end < length) ? end : ERROR;
 
-  AWS_POSTCONDITION(SKIP_WHITESPACE_POSTCOND(json, length, start, end));
+  __CPROVER_assert(SKIP_WHITESPACE_POSTCOND(json, length, start, end), "postcondition");
   return end;
 }
 
 /****************************************************************/
 
 uint32_t skip_string(char *json, uint32_t length, uint32_t start) {
-  AWS_PRECONDITION(SKIP_STRING_PRECOND(json, length, start));
+  __CPROVER_assume(SKIP_STRING_PRECOND(json, length, start));
 
   uint32_t end = start;
   end = (start < length && end < length && IS_QUOTE(json, end)) ? end+1 : ERROR;
@@ -71,12 +71,12 @@ uint32_t skip_string(char *json, uint32_t length, uint32_t start) {
   end = (end < length && IS_QUOTE(json, end)) ? end+1 : ERROR;
 
   dump("string", json, start, end);
-  AWS_POSTCONDITION(SKIP_STRING_POSTCOND(json, length, start, end));
+  __CPROVER_assert(SKIP_STRING_POSTCOND(json, length, start, end), "postcondition");
   return end;
 }
 
 uint32_t skip_integer(char *json, uint32_t length, uint32_t start) {
-  AWS_PRECONDITION(SKIP_INTEGER_PRECOND(json, length, start));
+  __CPROVER_assume(SKIP_INTEGER_PRECOND(json, length, start));
 
   uint32_t end = start;
   end = (start < length && end < length && IS_DIGIT(json, end)) ? end+1 : ERROR;
@@ -84,14 +84,14 @@ uint32_t skip_integer(char *json, uint32_t length, uint32_t start) {
   end = (end < length) ? end : ERROR;
 
   dump("integer", json, start, end);
-  AWS_POSTCONDITION(SKIP_INTEGER_POSTCOND(json, length, start, end));
+  __CPROVER_assert(SKIP_INTEGER_POSTCOND(json, length, start, end), "postcondition");
   return end;
 }
 
 /****************************************************************/
 
 uint32_t skip_hash(char *json, uint32_t length, uint32_t start) {
-  AWS_PRECONDITION(SKIP_HASH_PRECOND(json, length, start));
+  __CPROVER_assume(SKIP_HASH_PRECOND(json, length, start));
 
   uint32_t end = start;
   end = (start < length && end < length && IS_HASH_OPEN(json, end)) ? end+1 : ERROR;
@@ -111,12 +111,12 @@ uint32_t skip_hash(char *json, uint32_t length, uint32_t start) {
   end = (end < length && IS_HASH_CLOSE(json, end)) ? end+1 : ERROR;
 
   dump("hash", json, start, end);
-  AWS_POSTCONDITION(SKIP_HASH_POSTCOND(json, length, start, end));
+  __CPROVER_assert(SKIP_HASH_POSTCOND(json, length, start, end), "postcondition");
   return end;
 }
 
 uint32_t skip_list(char *json, uint32_t length, uint32_t start) {
-  AWS_PRECONDITION(SKIP_LIST_PRECOND(json, length, start));
+  __CPROVER_assume(SKIP_LIST_PRECOND(json, length, start));
 
   uint32_t end = start;
   end = (start < length && end < length && IS_LIST_OPEN(json, end)) ? end+1 : ERROR;
@@ -132,14 +132,14 @@ uint32_t skip_list(char *json, uint32_t length, uint32_t start) {
   end = (end < length && IS_LIST_CLOSE(json, end)) ? end+1 : ERROR;
 
   dump("list", json, start, end);
-  AWS_POSTCONDITION(SKIP_LIST_POSTCOND(json, length, start, end));
+  __CPROVER_assert(SKIP_LIST_POSTCOND(json, length, start, end), "postcondition");
   return end;
 }
 
 /****************************************************************/
 
 uint32_t skip_value(char *json, uint32_t length, uint32_t start) {
-  AWS_PRECONDITION(SKIP_VALUE_PRECOND(json, length, start));
+  __CPROVER_assume(SKIP_VALUE_PRECOND(json, length, start));
 
   uint32_t end = start;
   if (end < length && IS_QUOTE(json, end))
@@ -154,7 +154,7 @@ uint32_t skip_value(char *json, uint32_t length, uint32_t start) {
     end = ERROR;
 
   dump("value", json, start, end);
-  AWS_POSTCONDITION(SKIP_VALUE_POSTCOND(json, length, start, end));
+  __CPROVER_assert(SKIP_VALUE_POSTCOND(json, length, start, end), "postcondition");
   return end;
 }
 
@@ -163,7 +163,7 @@ uint32_t skip_value(char *json, uint32_t length, uint32_t start) {
 uint32_t hash_lookup(char *json, uint32_t jsonlength,
 		     char *key, uint32_t keylength,
 		     char **value, uint32_t *valuelength) {
-  AWS_PRECONDITION(LOOKUP_PRECOND(json, jsonlength,
+  __CPROVER_assume(LOOKUP_PRECOND(json, jsonlength,
 				  key, keylength,
 				  value, valuelength));
 
@@ -195,9 +195,9 @@ uint32_t hash_lookup(char *json, uint32_t jsonlength,
     if (end < jsonlength && IS_COMMA(json, end)) end++; else break;
   }
 
-  AWS_POSTCONDITION(LOOKUP_POSTCOND(json, jsonlength,
+  __CPROVER_assert(LOOKUP_POSTCOND(json, jsonlength,
 				    key, keylength,
-				    value, valuelength));
+				    value, valuelength), "postcondition");
   return *value != 0;
 }
 

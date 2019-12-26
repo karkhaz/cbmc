@@ -21,14 +21,6 @@ uint32_t hash_lookup(char *json, uint32_t jsonlength,
 
 /*****************************************************************/
 
-#ifndef AWS_PRECONDITION
-#define AWS_PRECONDITION(predicate) assert(predicate)
-#endif
-
-#ifndef AWS_POSTCONDITION
-#define AWS_POSTCONDITION(predicate) assert(predicate)
-#endif
-
 #ifndef AWS_MEM_IS_READABLE
 #ifdef CBMC
 #define AWS_MEM_IS_READABLE(base, len) __CPROVER_r_ok((base), (len))

@@ -12,8 +12,6 @@ set -e
 # $3..N:  space-separated list of colon-separated k:v pairs
 get_value_at_key()
 {
-    (>&2 echo "3: ${@:3:${#@}}")
-    (>&2 echo "last: ${2}")
     for pair in "${@:3:${#@}}"; do
         key=$(echo "${pair}" | awk -F: '{print $1}')
         if ! [[ "${key}" == "$1" ]]; then
@@ -63,8 +61,8 @@ test_mode=$(get_value_at_key test-mode "symbol cbmc" ${KEY_VALS})
 
 
 # Compile-time constants
-len=10
-keylen=10
+len=4
+keylen=4
 
 
 OUT_FILE=""
@@ -90,10 +88,11 @@ for src in harness.c ../jsonparser.c; do
     fi
 done
 
+
 instrumented="02_instrumented-${contracts_mode}-${test_mode}.gb"
 
 if [[ "${contracts_mode}" == apply ]]; then
-    "${goto_instrument}" --apply-contract 01_jsonparser.gb "${instrumented}"
+    "${goto_instrument}" --apply-code-contract 01_jsonparser.gb "${instrumented}"
 elif [[ "${contracts_mode}" == check ]]; then
     "${goto_instrument}" --check-contract 01_jsonparser.gb "${instrumented}"
 else

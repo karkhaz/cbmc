@@ -1,0 +1,7 @@
+CORE
+harness.c
+contracts:apply test-mode:cbmc
+^EXIT=0$
+^SIGNAL=0$
+--
+--
