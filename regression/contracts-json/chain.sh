@@ -66,7 +66,7 @@ keylen=4
 
 
 OUT_FILE=""
-for src in harness.c ../jsonparser.c; do
+for src in harness.c ../library.c; do
     OUT_FILE=01_$(basename ${src%.c}).gb
 
     if [[ "${is_windows}" == "true" ]]; then
@@ -92,11 +92,11 @@ done
 instrumented="02_instrumented-${contracts_mode}-${test_mode}.gb"
 
 if [[ "${contracts_mode}" == apply ]]; then
-    "${goto_instrument}" --apply-code-contract 01_jsonparser.gb "${instrumented}"
+    "${goto_instrument}" --apply-code-contract 01_library.gb "${instrumented}"
 elif [[ "${contracts_mode}" == check ]]; then
-    "${goto_instrument}" --check-contract 01_jsonparser.gb "${instrumented}"
+    "${goto_instrument}" --check-contract 01_library.gb "${instrumented}"
 else
-  cp 01_jsonparser.gb "${instrumented}"
+  cp 01_library.gb "${instrumented}"
 fi
 
 

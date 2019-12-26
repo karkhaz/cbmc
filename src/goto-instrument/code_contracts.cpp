@@ -369,7 +369,23 @@ bool code_contractst::replace(const std::list<std::string> &funs_to_replace)
       apply_contract(goto_function.body, it);
     }
   }
+
+  for(auto pair : goto_model.goto_functions.goto_mapt)
+    remove_skip(pair->second.body);
+
+  goto_model.goto_functions.update();
 }
+
+bool code_constractst::replace()
+{
+  std::list<std::string> funs_to_replace;
+  for(const auto pair : goto_model.goto_functions.goto_mapt)
+    if(has_contract(pair->first))
+      funs_to_replace.push_back(pair->first);
+
+  replace(funs_to_replace);
+}
+
 
 #if 0
 void code_contractst::operator()()

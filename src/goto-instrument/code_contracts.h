@@ -38,20 +38,7 @@ public:
 
   /// \brief Replace all calls to all functions that have a contract with the
   ///        contract
-  bool replace()
-  {
-    std::list<std::string> funs_to_replace;
-    for(const auto pair : goto_model.goto_functions.goto_mapt)
-      if(has_contract(pair->first))
-        funs_to_replace.push_back(pair->first);
-
-    replace(funs_to_replace);
-
-    for(auto pair : goto_model.goto_functions.goto_mapt)
-      remove_skip(pair->second.body);
-
-    goto_model.goto_functions.update();
-  }
+  bool replace();
 
 protected:
   namespacet ns;
