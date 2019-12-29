@@ -170,8 +170,8 @@ void code_contractst::apply_contract(
       replace.insert(p, *a_it);
     }
 
-  replace(requires);
-  replace(ensures);
+  //replace(requires);
+  //replace(ensures);
 
   if(requires.is_not_nil())
   {
@@ -393,10 +393,15 @@ bool code_contractst::check()
 bool code_contractst::replace()
 {
   std::list<std::string> funs_to_replace;
+    log.warning() << "Replacing..." << messaget::eom;
   Forall_goto_functions(fit, goto_functions)
   {
     if(has_contract(fit->first))
+    {
       funs_to_replace.push_back(fit->first.c_str());
+      log.debug() << "will replace function " << fit->first.c_str()
+                  << messaget::eom;
+    }
   }
 
   return replace(funs_to_replace);

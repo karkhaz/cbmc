@@ -1143,12 +1143,12 @@ void goto_instrument_parse_optionst::instrument_goto_program()
   {
     code_contractst cont(goto_model, log);
 
-    if(cmdline.isset("replace-functions-with-contract"))
+    if(cmdline.isset("replace-functions-with-contracts"))
       if(cont.replace(
-          cmdline.get_comma_separated_values("replace-with-contract")))
+          cmdline.get_comma_separated_values("replace-with-contracts")))
         exit(CPROVER_EXIT_USAGE_ERROR);
 
-    if(cmdline.isset("replace-all-with-contract"))
+    if(cmdline.isset("replace-all-with-contracts"))
       if(cont.replace())
         exit(CPROVER_EXIT_USAGE_ERROR);
 
