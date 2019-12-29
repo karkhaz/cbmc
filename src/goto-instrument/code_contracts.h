@@ -14,13 +14,22 @@ Date: February 2016
 #ifndef CPROVER_GOTO_INSTRUMENT_CODE_CONTRACTS_H
 #define CPROVER_GOTO_INSTRUMENT_CODE_CONTRACTS_H
 
-class goto_modelt;
+#include <list>
+#include <unordered_set>
+#include <string>
+
+#include <goto-programs/goto_functions.h>
+#include <goto-programs/goto_model.h>
+
+#include <util/namespace.h>
+
+class messaget;
 
 class code_contractst
 {
 public:
   code_contractst(
-    goto_modelt goto_model,
+    goto_modelt &goto_model,
     messaget &log)
     : ns(goto_model.symbol_table),
       symbol_table(goto_model.symbol_table),

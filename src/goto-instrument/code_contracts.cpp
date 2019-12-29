@@ -23,6 +23,8 @@ Date: February 2016
 
 #include <linking/static_lifetime_init.h>
 
+#include <util/message.h>
+
 #include "loop_utils.h"
 
 static void check_apply_invariants(
@@ -268,7 +270,7 @@ void code_contractst::add_contract_check(
   // prepare function call including all declarations
   const symbolt &function_symbol = ns.lookup(function);
   code_function_callt call(function_symbol.symbol_expr());
-  replace_symbolt replace;
+  replace_symbolt replace_syms;
 
   // decl ret
   if(gf.type.return_type()!=empty_typet())
@@ -284,7 +286,7 @@ void code_contractst::add_contract_check(
     call.lhs()=r;
 
     symbol_exprt ret_val(CPROVER_PREFIX "return_value", call.lhs().type());
-    replace.insert(ret_val, r);
+    replace_syms.insert(ret_val, r);
   }
 
   // decl parameter1 ...
@@ -303,7 +305,7 @@ void code_contractst::add_contract_check(
 
     call.arguments().push_back(p);
 
-    replace.insert(parameter_symbol.symbol_expr(), p);
+    replace_syms.insert(parameter_symbol.symbol_expr(), p);
   }
 
   // assume(requires)
@@ -311,7 +313,7 @@ void code_contractst::add_contract_check(
   {
     // rewrite any use of parameters
     exprt requires_cond = requires;
-    replace(requires_cond);
+    replace_syms(requires_cond);
 
     check.add(goto_programt::make_assumption(
       requires_cond, requires.source_location()));
@@ -322,7 +324,7 @@ void code_contractst::add_contract_check(
 
   // rewrite any use of __CPROVER_return_value
   exprt ensures_cond = ensures;
-  replace(ensures_cond);
+  replace_syms(ensures_cond);
 
   // assert(ensures)
   check.add(
@@ -339,51 +341,65 @@ void code_contractst::add_contract_check(
 
 bool code_contractst::replace(const std::list<std::string> &funs_to_replace)
 {
-  Forall_goto_program_instructions(it, goto_function.body)
+  Forall_goto_functions(fit, goto_functions)
   {
-    if(it->is_function_call())
+    Forall_goto_program_instructions(it, fit->second.body)
     {
-      const code_function_callt &call = it->get_function_call();
+      if(it->is_function_call())
+      {
+        const code_function_callt &call = it->get_function_call();
 
-      // TODO we don't handle function pointers
-      if(call.function.id() != ID_symbol)
-        continue;
-
-      const irep_idt &fun_name =
-        to_symbol_expr(call.function()).get_identifier();
-      auto found = std::find(
-        funs_to_replace.begin(),
-        funs_to_replace.end(),
-        std::str(fun_name.c_str()));
-      if(found == funs_to_replace.end())
+        // TODO we don't handle function pointers
+        if(call.function().id() != ID_symbol)
           continue;
 
-      if(!has_contract(fun_name))
-      {
-        log.warning << "Function '" << fun_name
-                    << "' does not appear to have a postcondition; "
-                    << "not replacing with contract." << messaget::eom;
-        continue;
-      }
+        const irep_idt &fun_name =
+          to_symbol_expr(call.function()).get_identifier();
+        auto found = std::find(
+          funs_to_replace.begin(),
+          funs_to_replace.end(),
+          fun_name.c_str());
+        if(found == funs_to_replace.end())
+            continue;
 
-      apply_contract(goto_function.body, it);
+        if(!has_contract(fun_name))
+        {
+          log.warning() << "Function '" << fun_name
+                        << "' does not appear to have a postcondition; "
+                        << "not replacing with contract." << messaget::eom;
+          continue;
+        }
+
+        apply_contract(fit->second.body, it);
+      }
     }
   }
 
-  for(auto pair : goto_model.goto_functions.goto_mapt)
-    remove_skip(pair->second.body);
+  Forall_goto_functions(fit, goto_functions)
+  {
+    remove_skip(fit->second.body);
+  }
 
-  goto_model.goto_functions.update();
+  goto_functions.update();
+
+  return false;
 }
 
-bool code_constractst::replace()
+bool code_contractst::check()
+{
+  return true;
+}
+
+bool code_contractst::replace()
 {
   std::list<std::string> funs_to_replace;
-  for(const auto pair : goto_model.goto_functions.goto_mapt)
-    if(has_contract(pair->first))
-      funs_to_replace.push_back(pair->first);
+  Forall_goto_functions(fit, goto_functions)
+  {
+    if(has_contract(fit->first))
+      funs_to_replace.push_back(fit->first.c_str());
+  }
 
-  replace(funs_to_replace);
+  return replace(funs_to_replace);
 }
 
 

@@ -1144,14 +1144,17 @@ void goto_instrument_parse_optionst::instrument_goto_program()
     code_contractst cont(goto_model, log);
 
     if(cmdline.isset("replace-functions-with-contract"))
-      contracts.replace(
-        cmdline.get_comma_separated_values("replace-with-contract"));
+      if(cont.replace(
+          cmdline.get_comma_separated_values("replace-with-contract")))
+        exit(CPROVER_EXIT_USAGE_ERROR);
 
     if(cmdline.isset("replace-all-with-contract"))
-      contracts.replace();
+      if(cont.replace())
+        exit(CPROVER_EXIT_USAGE_ERROR);
 
     if(cmdline.isset("check-contracts"))
-      contracts.check();
+      if(cont.check())
+        exit(CPROVER_EXIT_USAGE_ERROR);
   }
 
   // replace function pointers, if explicitly requested
