@@ -97,7 +97,8 @@ Author: Daniel Kroening, kroening@kroening.com
   "(list-symbols)(list-undefined-functions)" \
   "(z3)(add-library)(show-dependence-graph)" \
   "(horn)(skip-loops):(apply-code-contracts)(model-argc-argv):" \
-  "(replace-all-with-contracts)(replace-with-contracts):" \
+  "(replace-all-with-contracts)(replace-function-with-contract):" \
+  "(enforce-all-contracts)(enforce-function-contract:)" \
   "(show-threaded)(list-calls-args)" \
   "(undefined-function-is-assume-false)" \
   "(remove-function-body):"\

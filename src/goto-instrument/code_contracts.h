@@ -39,15 +39,52 @@ public:
   {
   }
 
-  bool check();
-
   /// \brief Replace all calls to each function in the list with that function's
   ///        contract
-  bool replace(const std::list<std::string> &funs_to_replace);
+  ///
+  /// Use this function when proving code that calls into an expensive function,
+  /// `F`. You can write a function contract for F using __CPROVER_requires and
+  /// __CPROVER_ensures, and then use this function to replace all calls to `F`
+  /// with an assertion that the `requires` clause holds followed by an
+  /// assumption that the `ensures` clause holds. In order to ensure that `F`
+  /// actually abides by its `ensures` and `requires` clauses, you should
+  /// separately call the `code_constractst::enforce_contracts()` on `F`.
+  ///
+  /// \return `false` on failure, `true` otherwise
+  bool replace_calls(const std::list<std::string> &);
 
-  /// \brief Replace all calls to all functions that have a contract with the
+  /// \brief Turn requires & assumes into assumptions and assertions for each of
+  ///        the named functions
+  ///
+  /// Use this function to prove the correctness of a function F independently
+  /// of its calling context. If you have proved that F is correct, then you can
+  /// soundly replace all calls to F with F's contract using the
+  /// code_contractst::replace_calls() function; this means that symbolic
+  /// execution does not need to explore F every time it is called, increasing
+  /// scalability.
+  ///
+  /// Implementation: mangle the name of each function F into a new name,
+  /// `__CPROVER_original_F` (`CF` for short). Then mint a new function `F` that
+  /// assumes `CF`'s `requires` clause, calls `CF`, and then asserts `CF`'s
+  /// `ensures` clause.
+  ///
+  /// \return `false` on failure, `true` otherwise
+  bool enforce_contracts(const std::list<std::string> &funs_to_enforce)
+  {
+    bool fail = false;
+    for(const auto &fun : funs_to_enforce)
+      fail |= enforce_contract(fun);
+    return fail;
+  }
+
+  /// \brief Call enforce_contracts() on all functions that have a contract
+  /// \return `false` on failure, `true` otherwise
+  bool enforce_contracts();
+
+  /// \brief Call replace_calls() on all calls to all functions that have a
   ///        contract
-  bool replace();
+  /// \return `false` on failure, `true` otherwise
+  bool replace_calls();
 
 protected:
   namespacet ns;
@@ -59,6 +96,9 @@ protected:
 
   std::unordered_set<irep_idt> summarized;
 
+  /// \brief Enforce contract of a single function
+  bool enforce_contract(const std::string &);
+
   void code_contracts(goto_functionst::goto_functiont &goto_function);
 
   /// \brief Does the named function have a contract?
@@ -69,7 +109,8 @@ protected:
     goto_programt::targett target);
 
   void add_contract_check(
-    const irep_idt &function,
+    const irep_idt &,
+    const irep_idt &,
     goto_programt &dest);
 
   const symbolt &new_tmp_symbol(

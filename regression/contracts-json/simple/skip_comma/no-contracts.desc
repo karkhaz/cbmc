@@ -1,8 +1,0 @@
-CORE
-harness.c
-contracts:none test-mode:symbol
-^EXIT=0$
-^SIGNAL=0$
---
---
-foo

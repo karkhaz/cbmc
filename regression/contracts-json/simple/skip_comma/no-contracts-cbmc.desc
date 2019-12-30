@@ -1,7 +1,0 @@
-CORE
-harness.c
-contracts:none test-mode:cbmc
-^EXIT=0$
-^SIGNAL=0$
---
---

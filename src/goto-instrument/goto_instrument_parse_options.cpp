@@ -1129,31 +1129,37 @@ void goto_instrument_parse_optionst::instrument_goto_program()
     goto_model.goto_functions.update();
   }
 
-  if(cmdline.isset("replace-functions-with-contracts") &&
-     cmdline.isset("replace-all-with-contracts"))
+  const std::list<std::pair<std::string, std::string>> contract_flags({
+    {"replace-function-with-contract", "replace-all-with-contracts"},
+    {"enforce-function-contract", "enforce-all-contracts"}});
+  for(const auto &pair : contract_flags)
   {
-    log.error() << "Pass at most one of --replace-functions-with-contracts "
-                   "and --replace-all-with-contracts." << messaget::eom;
-		exit(CPROVER_EXIT_USAGE_ERROR);
+    if(cmdline.isset(pair.first.c_str()) && cmdline.isset(pair.second.c_str()))
+    {
+      log.error() << "Pass at most one of --" << pair.first << " and --"
+                  << pair.second << "." << messaget::eom;
+      exit(CPROVER_EXIT_USAGE_ERROR);
+    }
   }
 
-  if(cmdline.isset("replace-functions-with-contracts") ||
+  if(cmdline.isset("replace-function-with-contract") ||
      cmdline.isset("replace-all-with-contracts") ||
-     cmdline.isset("check-contracts"))
+     cmdline.isset("enforce-function-contract") ||
+     cmdline.isset("enforce-all-contracts"))
   {
     code_contractst cont(goto_model, log);
 
-    if(cmdline.isset("replace-functions-with-contracts"))
-      if(cont.replace(
+    if(cmdline.isset("replace-function-with-contract"))
+      if(cont.replace_calls(
           cmdline.get_comma_separated_values("replace-with-contracts")))
         exit(CPROVER_EXIT_USAGE_ERROR);
 
     if(cmdline.isset("replace-all-with-contracts"))
-      if(cont.replace())
+      if(cont.replace_calls())
         exit(CPROVER_EXIT_USAGE_ERROR);
 
-    if(cmdline.isset("check-contracts"))
-      if(cont.check())
+    if(cmdline.isset("enforce-all-contracts"))
+      if(cont.enforce_contracts())
         exit(CPROVER_EXIT_USAGE_ERROR);
   }
 
