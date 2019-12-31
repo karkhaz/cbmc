@@ -253,6 +253,7 @@ bool code_contractst::enforce_contract(const std::string &fun_to_enforce)
   const symbolt *original_sym = symbol_table.lookup(original);
   mangled_sym = *original_sym;
   mangled_sym.name = mangled;
+  mangled_sym.base_name = mangled;
   mangled_sym.location = sl;
   std::pair<symbolt &, bool> mangled_found =
     symbol_table.insert(std::move(mangled_sym));
@@ -420,13 +421,7 @@ bool code_contractst::replace_calls(
           funs_to_replace.end(),
           fun_name.c_str());
         if(found == funs_to_replace.end())
-        {
-          log.error() << "Function '" << fun_name
-                      << "' does not exist; not replacing call with contract."
-                      << messaget::eom;
-          fail = true;
           continue;
-        }
 
         if(!has_contract(fun_name))
         {

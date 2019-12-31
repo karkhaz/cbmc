@@ -1,0 +1,12 @@
+KNOWNBUG
+main.c
+contracts:check test-mode:cbmc function:foo
+^EXIT=0$
+^SIGNAL=0$
+^VERIFICATION SUCCESSFUL$
+--
+--
+This fails because the evaluation order within a __CPROVER_requires
+clause is unspecified. CBMC complains about the x->x access in the
+requires clause even though the same clause required that x->x be
+readable.

@@ -1,6 +1,6 @@
 CORE
 main.c
-contracts:apply test-mode:cbmc function:main
+contracts:check test-mode:cbmc function:foo
 ^EXIT=0$
 ^SIGNAL=0$
 ^VERIFICATION SUCCESSFUL$

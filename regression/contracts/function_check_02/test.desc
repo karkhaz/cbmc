@@ -1,6 +1,6 @@
 KNOWNBUG
 main.c
---check-code-contracts
+contracts:apply test-mode:cbmc function:main
 ^EXIT=0$
 ^SIGNAL=0$
 ^VERIFICATION SUCCESSFUL$

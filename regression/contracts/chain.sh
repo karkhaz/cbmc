@@ -87,7 +87,7 @@ instrumented="02_instrumented-${contracts_mode}-${test_mode}.gb"
 if [[ "${contracts_mode}" == apply ]]; then
     "${goto_instrument}" --replace-all-with-contracts 01_main.gb "${instrumented}"
 elif [[ "${contracts_mode}" == check ]]; then
-    "${goto_instrument}" --check-contracts 01_main.gb "${instrumented}"
+    "${goto_instrument}" --enforce-all-contracts 01_main.gb "${instrumented}"
 else
   cp 01_main.gb "${instrumented}"
 fi
