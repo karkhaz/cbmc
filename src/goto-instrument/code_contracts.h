@@ -43,14 +43,15 @@ public:
   ///        contract
   ///
   /// Use this function when proving code that calls into an expensive function,
-  /// `F`. You can write a function contract for F using __CPROVER_requires and
+  /// `F`. You can write a contract for F using __CPROVER_requires and
   /// __CPROVER_ensures, and then use this function to replace all calls to `F`
   /// with an assertion that the `requires` clause holds followed by an
   /// assumption that the `ensures` clause holds. In order to ensure that `F`
   /// actually abides by its `ensures` and `requires` clauses, you should
-  /// separately call the `code_constractst::enforce_contracts()` on `F`.
+  /// separately call `code_constractst::enforce_contracts()` on `F` and verify
+  /// it using `cbmc --function F`.
   ///
-  /// \return `false` on failure, `true` otherwise
+  /// \return `true` on failure, `false` otherwise
   bool replace_calls(const std::list<std::string> &);
 
   /// \brief Turn requires & assumes into assumptions and assertions for each of
@@ -64,11 +65,11 @@ public:
   /// scalability.
   ///
   /// Implementation: mangle the name of each function F into a new name,
-  /// `__CPROVER_original_F` (`CF` for short). Then mint a new function `F` that
-  /// assumes `CF`'s `requires` clause, calls `CF`, and then asserts `CF`'s
-  /// `ensures` clause.
+  /// `__CPROVER_contracts_original_F` (`CF` for short). Then mint a new
+  /// function called `F` that assumes `CF`'s `requires` clause, calls `CF`, and
+  /// then asserts `CF`'s `ensures` clause.
   ///
-  /// \return `false` on failure, `true` otherwise
+  /// \return `true` on failure, `false` otherwise
   bool enforce_contracts(const std::list<std::string> &funs_to_enforce)
   {
     bool fail = false;
@@ -78,12 +79,12 @@ public:
   }
 
   /// \brief Call enforce_contracts() on all functions that have a contract
-  /// \return `false` on failure, `true` otherwise
+  /// \return `true` on failure, `false` otherwise
   bool enforce_contracts();
 
-  /// \brief Call replace_calls() on all calls to all functions that have a
+  /// \brief Call replace_calls() on all calls to any function that has a
   ///        contract
-  /// \return `false` on failure, `true` otherwise
+  /// \return `true` on failure, `false` otherwise
   bool replace_calls();
 
 protected:

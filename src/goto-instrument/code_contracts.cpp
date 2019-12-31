@@ -245,7 +245,7 @@ bool code_contractst::enforce_contract(const std::string &fun_to_enforce)
   std::swap(goto_functions.function_map[mangled], old_fun->second);
   goto_functions.function_map.erase(old_fun);
 
-  // Create a new symbol with the mangled name
+  // Place a new symbol with the mangled name into the symbol table
   source_locationt sl;
   sl.set_file("instrumented for code contracts");
   sl.set_line("0");
@@ -271,8 +271,8 @@ bool code_contractst::enforce_contract(const std::string &fun_to_enforce)
   auto mangled_fun = goto_functions.function_map.find(mangled);
   INVARIANT(
     mangled_fun != goto_functions.function_map.end(),
-    "There should be a function called " + ss.str() + " in the "
-    "function map because we inserted a fresh goto-program with that name");
+    "There should be a function called " + ss.str() + " in the function map "
+    "because we inserted a fresh goto-program with that mangled name");
 
   goto_functiont &wrapper = goto_functions.function_map[original];
   wrapper.parameter_identifiers = mangled_fun->second.parameter_identifiers;
@@ -400,7 +400,7 @@ void code_contractst::add_contract_check(
 bool code_contractst::replace_calls(
   const std::list<std::string> &funs_to_replace)
 {
-  bool ok = true;
+  bool fail = false;
   Forall_goto_functions(fit, goto_functions)
   {
     Forall_goto_program_instructions(it, fit->second.body)
@@ -424,7 +424,7 @@ bool code_contractst::replace_calls(
           log.error() << "Function '" << fun_name
                       << "' does not exist; not replacing call with contract."
                       << messaget::eom;
-          ok = false;
+          fail = true;
           continue;
         }
 
@@ -433,7 +433,7 @@ bool code_contractst::replace_calls(
           log.error() << "Function '" << fun_name
                       << "' does not have a contract; "
                       << "not replacing call with contract." << messaget::eom;
-          ok = false;
+          fail = true;
           continue;
         }
 
@@ -442,7 +442,7 @@ bool code_contractst::replace_calls(
     }
   }
 
-  if(!ok)
+  if(fail)
     return true;
 
   Forall_goto_functions(fit, goto_functions)
@@ -461,15 +461,7 @@ bool code_contractst::replace_calls()
   Forall_goto_functions(fit, goto_functions)
   {
     if(has_contract(fit->first))
-    {
       funs_to_replace.push_back(fit->first.c_str());
-    }
-    else
-    {
-      log.debug() << "Function '" << fit->first.c_str() << "' does "
-                  << "not have a contract; not replacing calls "
-                  << "with contract." << messaget::eom;
-    }
   }
   return replace_calls(funs_to_replace);
 }
@@ -480,15 +472,7 @@ bool code_contractst::enforce_contracts()
   Forall_goto_functions(fit, goto_functions)
   {
     if(has_contract(fit->first))
-    {
       funs_to_enforce.push_back(fit->first.c_str());
-    }
-    else
-    {
-      log.debug() << "Function '" << fit->first.c_str() << "' does "
-                  << "not have a function contract; not adding its "
-                  << "contract to its body." << messaget::eom;
-    }
   }
   return enforce_contracts(funs_to_enforce);
 }
