@@ -1,0 +1,8 @@
+CORE
+main.c
+contracts:check test-mode:cbmc function:modify_object
+^EXIT=0$
+^SIGNAL=0$
+^VERIFICATION SUCCESSFUL$
+--
+--
